@@ -1,41 +1,11 @@
 use std::collections::HashMap;
 
 use chrono::{DateTime, Utc, serde::ts_seconds};
-use const_format::concatcp;
-use reqwest::{Client, header::HeaderMap};
 use serde::{Deserialize, Serialize};
 
-const BASE_URL: &str = "https://optaplayerstats.statsperform.com/api/";
-const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "ro_RO/soccer/livescores");
-
 #[derive(Serialize)]
-struct LiveScoreQueryParams {
-    offset: u8,
-}
-
-fn create_header_maps() -> HeaderMap {
-    let mut headers = HeaderMap::new();
-    headers.insert("Accept", "application/json".parse().unwrap());
-    headers.insert("Accept-Encoding", "".parse().unwrap());
-
-    headers.insert("Connection", "keep-alive".parse().unwrap());
-    headers.insert("Host", "optaplayerstats.statsperform.com".parse().unwrap());
-    headers.insert("Cache-Control", "no-cache".parse().unwrap());
-
-    headers.insert(
-        "Referer",
-        "https://optaplayerstats.statsperform.com/ro_RO/soccer"
-            .parse()
-            .unwrap(),
-    );
-
-    headers.insert(
-        "User-Agent",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:137.0) Gecko/20100101 Firefox/137.0"
-            .parse()
-            .unwrap(),
-    );
-    headers
+pub(crate) struct LiveScoreQueryParams {
+    pub(crate) offset: u8,
 }
 
 #[derive(Debug, Deserialize)]
@@ -54,9 +24,8 @@ pub struct Match {
     pub date: DateTime<Utc>,
     pub home: Team,
     pub away: Team,
-    pub score: HashMap<ScoreKey, Score>,
-    pub events: Vec<Event>,
-
+    pub score: Option<HashMap<ScoreKey, Score>>,
+    pub events: Option<Vec<Event>>,
     #[serde(with = "ts_seconds")]
     pub updated: DateTime<Utc>,
 }
@@ -67,7 +36,22 @@ pub enum Event {
     Sub(SubEvent),
     Goal(GoalEvent),
     Card(CardEvent),
-    Var,
+    Var(VAREvent),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VAREvent {
+    pub period_id: u8,
+    pub min: u16,
+    pub time_str: String,
+    pub team_id: String,
+    pub player_id: String,
+    pub player_name: String,
+    #[serde(rename = "type")]
+    pub var_type: String,
+    pub outcome: String,
+    pub decision: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -102,7 +86,7 @@ pub struct GoalEvent {
     pub player_name: String,
     #[serde(rename = "type")]
     pub goal_type: GoalType,
-    pub score: [u8; 2],
+    pub score: Option<[u8; 2]>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -173,22 +157,4 @@ pub enum Status {
     Played,
     Fixture,
     Playing,
-}
-
-#[tokio::main]
-async fn main() {
-    env_logger::init();
-    let live_score_query_params = LiveScoreQueryParams { offset: 0 };
-    let client = Client::new();
-    let headers = create_header_maps();
-
-    dbg!(&LIVE_SCORE_URL);
-    let req = client
-        .get(LIVE_SCORE_URL)
-        .query(&live_score_query_params)
-        .headers(headers);
-
-    let scores = req.send().await.unwrap();
-    let body = scores.json::<LiveScoresResponse>().await.unwrap();
-    dbg!(body);
 }

@@ -1,0 +1,10 @@
+[package]
+name = "gegen-data"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+chrono = { workspace = true, features = ["serde"] }
+const_format = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
+serde = { workspace = true, features = ["derive"] }
