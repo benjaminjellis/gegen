@@ -50,12 +50,13 @@ pub async fn get_matches(client: &reqwest::Client, date: NaiveDate) -> LiveScore
 }
 #[cfg(test)]
 mod tests {
+    use super::*;
     use chrono::NaiveDate;
 
-    #[test]
-    fn test_string() {
-        let ndate = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap().to_string();
-        println!("{}", ndate);
-        panic!();
+    #[tokio::test]
+    async fn test_live_scores() {
+        let client = reqwest::Client::new();
+        let scores = get_live_score(&client).await;
+        dbg!(scores);
     }
 }

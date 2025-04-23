@@ -3,7 +3,7 @@ use reqwest::header::HeaderMap;
 pub(crate) fn create_header_maps() -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert("Accept", "application/json".parse().unwrap());
-    headers.insert("Accept-Encoding", "".parse().unwrap());
+    headers.insert("Accept-Encoding", "gzip".parse().unwrap());
 
     headers.insert("Connection", "keep-alive".parse().unwrap());
     headers.insert("Host", "optaplayerstats.statsperform.com".parse().unwrap());
