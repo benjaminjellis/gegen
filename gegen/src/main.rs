@@ -48,7 +48,7 @@ fn main() -> Result<()> {
 
 fn run(
     mut terminal: DefaultTerminal,
-    _: &JoinHandle<Result<(), String>>,
+    _: &JoinHandle<Result<()>>,
     mut app_state: State,
 ) -> Result<()> {
     loop {
@@ -64,9 +64,7 @@ fn run(
         if app_state.should_draw() {
             tracing::info!("pre draw");
             app_state.on_tick();
-            terminal
-                .draw(|frame| ui::draw_page(frame, &mut app_state))
-                .unwrap();
+            terminal.draw(|frame| ui::draw_page(frame, &mut app_state))?;
 
             tracing::info!("post draw");
         }
