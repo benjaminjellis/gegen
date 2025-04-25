@@ -544,18 +544,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gegen-data"
-version = "0.1.2"
-dependencies = [
- "chrono",
- "const_format",
- "reqwest",
- "serde",
- "thiserror 2.0.12",
-]
-
-[[package]]
-name = "gegen-tui"
+name = "gegen"
 version = "0.1.2"
 dependencies = [
  "color-eyre",
@@ -567,6 +556,17 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "gegen-data"
+version = "0.1.2"
+dependencies = [
+ "chrono",
+ "const_format",
+ "reqwest",
+ "serde",
+ "thiserror 2.0.12",
 ]
 
 [[package]]

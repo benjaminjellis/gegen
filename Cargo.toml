@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["gegen-data", "gegen-tui"]
+members = ["gegen-data", "gegen"]
 
 [workspace.package]
 version = "0.1.2"

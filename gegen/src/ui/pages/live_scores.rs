@@ -6,7 +6,7 @@ use ratatui::{
 };
 use throbber_widgets_tui::ThrobberState;
 
-use crate::{State, state::LiveData};
+use crate::State;
 
 fn calculate_loading_layout(area: Rect) -> [Rect; 2] {
     let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
@@ -38,9 +38,10 @@ fn render_title(frame: &mut Frame, area: Rect) {
     );
 }
 
+// TODO: make throbber render in centre of page
 fn render_loading(frame: &mut Frame, area: Rect, throbber_state: &mut ThrobberState) {
     let full = throbber_widgets_tui::Throbber::default()
-        .label("Running...")
+        .label("loading...")
         .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
         .throbber_style(
             ratatui::style::Style::default()
@@ -66,7 +67,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State) {
     tracing::info!("get read lock");
     let data = app_state.data.read().unwrap();
     match data.as_ref() {
-        Some(live_data) => {
+        Some(_) => {
             let (title_area, layout) = calculate_loaded_layout(frame.area());
             render_title(frame, title_area);
 
