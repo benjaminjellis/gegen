@@ -62,17 +62,17 @@ pub struct CardEvent {
     pub time_str: String,
     pub team_id: String,
     #[serde(rename = "type")]
-    pub card_type: CardType,
+    pub card_type: Card,
 }
 
 #[derive(Debug, Deserialize)]
-pub enum CardType {
+pub enum Card {
     #[serde(rename = "YC")]
-    YellowCard,
+    Yellow,
     #[serde(rename = "Y2C")]
-    SecondYellowCard,
+    SecondYellow,
     #[serde(rename = "RC")]
-    RedCard,
+    Red,
 }
 
 #[derive(Debug, Deserialize)]
@@ -144,7 +144,7 @@ pub struct Country {
     pub full_name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Team {
     pub id: String,

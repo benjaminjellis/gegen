@@ -1,5 +1,6 @@
 use reqwest::header::HeaderMap;
 
+// NOTE: these unwraps should never fail so there's no need for error handling here
 pub(crate) fn create_header_maps() -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert("Accept", "application/json".parse().unwrap());

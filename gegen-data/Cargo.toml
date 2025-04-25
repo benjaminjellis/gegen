@@ -6,8 +6,6 @@ edition.workspace = true
 [dependencies]
 chrono = { workspace = true, features = ["serde"] }
 const_format = { workspace = true }
-reqwest = { workspace = true, features = ["json", "gzip"] }
+reqwest = { workspace = true, features = ["json", "gzip", "blocking"] }
 serde = { workspace = true, features = ["derive"] }
-
-[dev-dependencies]
-tokio = { workspace = true, features = ["full"] }
+thiserror = { workspace = true }

@@ -3,14 +3,16 @@ use const_format::concatcp;
 use reqwest::StatusCode;
 use types::LiveScoresResponse;
 
-mod types;
+pub mod types;
 mod utils;
 
 const BASE_URL: &str = "https://optaplayerstats.statsperform.com/api/";
 const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "ro_RO/soccer/livescores");
 const MATTCHES_URL: &str = concatcp!(BASE_URL, "ro_RO/soccer/matches/");
 
-pub async fn get_live_score(client: &reqwest::Client) -> LiveScoresResponse {
+pub fn get_live_scores(
+    client: &reqwest::blocking::Client,
+) -> Result<LiveScoresResponse, GegenDataError> {
     let live_score_query_params = types::LiveScoreQueryParams { offset: 0 };
 
     let headers = utils::create_header_maps();
@@ -19,44 +21,84 @@ pub async fn get_live_score(client: &reqwest::Client) -> LiveScoresResponse {
         .query(&live_score_query_params)
         .headers(headers)
         .send()
-        .await
-        .unwrap();
+        .map_err(|source| GegenDataError::Reqwest {
+            source,
+            url: LIVE_SCORE_URL.to_string(),
+        })?;
 
     match resp.status() {
-        StatusCode::OK => resp.json::<LiveScoresResponse>().await.unwrap(),
-        StatusCode::TOO_MANY_REQUESTS => todo!(),
-        other => todo!(),
+        StatusCode::OK => {
+            resp.json::<LiveScoresResponse>()
+                .map_err(|source| GegenDataError::Serialisation {
+                    source,
+                    url: LIVE_SCORE_URL.to_string(),
+                })
+        }
+        StatusCode::TOO_MANY_REQUESTS => Err(GegenDataError::TooManyRequests {
+            url: LIVE_SCORE_URL.to_string(),
+        }),
+        other_status_code => Err(GegenDataError::Non200 {
+            status_code: other_status_code,
+            url: LIVE_SCORE_URL.to_string(),
+            body: resp.text().unwrap_or_default(),
+        }),
     }
 }
 
-pub async fn get_matches(client: &reqwest::Client, date: NaiveDate) -> LiveScoresResponse {
+pub fn get_matches(
+    client: &reqwest::blocking::Client,
+    date: NaiveDate,
+) -> Result<LiveScoresResponse, GegenDataError> {
     let url = format!("{MATTCHES_URL}/{date}");
     let live_score_query_params = types::LiveScoreQueryParams { offset: 0 };
 
     let headers = utils::create_header_maps();
     let resp = client
-        .get(url)
+        .get(&url)
         .query(&live_score_query_params)
         .headers(headers)
         .send()
-        .await
-        .unwrap();
+        .map_err(|source| GegenDataError::Reqwest {
+            source,
+            url: url.clone(),
+        })?;
 
     match resp.status() {
-        StatusCode::OK => resp.json::<LiveScoresResponse>().await.unwrap(),
-        StatusCode::TOO_MANY_REQUESTS => todo!(),
-        other => todo!(),
+        StatusCode::OK => resp
+            .json::<LiveScoresResponse>()
+            .map_err(|source| GegenDataError::Serialisation { source, url }),
+        StatusCode::TOO_MANY_REQUESTS => Err(GegenDataError::TooManyRequests { url }),
+        other_status_code => Err(GegenDataError::Non200 {
+            status_code: other_status_code,
+            url,
+            body: resp.text().unwrap_or_default(),
+        }),
     }
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum GegenDataError {
+    #[error("Failed to send request to {url}: {source}")]
+    Reqwest { source: reqwest::Error, url: String },
+    #[error("Got a 429 / too many rqeusts {url}")]
+    TooManyRequests { url: String },
+    #[error("Got a 429 / too many rqeusts {url}")]
+    Non200 {
+        status_code: StatusCode,
+        url: String,
+        body: String,
+    },
+    #[error("Failed to deserialise response")]
+    Serialisation { source: reqwest::Error, url: String },
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::NaiveDate;
 
-    #[tokio::test]
-    async fn test_live_scores() {
-        let client = reqwest::Client::new();
-        let scores = get_live_score(&client).await;
-        dbg!(scores);
+    #[test]
+    fn test_live_scores() {
+        let client = reqwest::blocking::Client::new();
+        let _ = get_live_scores(&client).unwrap();
     }
 }

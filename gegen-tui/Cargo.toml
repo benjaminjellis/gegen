@@ -1,0 +1,15 @@
+[package]
+name = "gegen-tui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+color-eyre = { workspace = true }
+crossterm = { workspace = true }
+gegen-data = { path = "../gegen-data" }
+ratatui = { workspace = true }
+reqwest = { workspace = true, features = ["blocking"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
+tracing-appender = { workspace = true }
+throbber-widgets-tui = { workspace = true }
