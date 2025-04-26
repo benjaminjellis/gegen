@@ -15,7 +15,6 @@ fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>
     let mut last_fetched_live_date = SystemTime::now();
 
     loop {
-        tracing::info!("start loop");
         if let Ok(other_date) = recv.try_recv() {
             tracing::info!("fetching data for {other_date}");
             fetch_and_insert_data(&client, &data, other_date, &mut failure_count);

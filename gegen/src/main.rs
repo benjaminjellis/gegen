@@ -10,6 +10,8 @@ use state::State;
 use std::{sync::Arc, thread::JoinHandle, time::Duration};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+pub(crate) const GEGEN_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() -> Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
@@ -45,13 +47,21 @@ fn main() -> Result<()> {
 
     run(terminal, &data_join_handle, app_state)?;
 
-    // if data_join_handle.is_finished() {}
     Ok(())
 }
 
-fn run(mut terminal: DefaultTerminal, _: &JoinHandle<()>, mut app_state: State) -> Result<()> {
+fn run(
+    mut terminal: DefaultTerminal,
+    data_join_handle: &JoinHandle<()>,
+    mut app_state: State,
+) -> Result<()> {
     loop {
         if app_state.should_quit {
+            break;
+        }
+
+        if data_join_handle.is_finished() {
+            tracing::error!("gegen quit due to the data fetching thread completeting");
             break;
         }
 

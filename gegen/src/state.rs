@@ -24,6 +24,7 @@ pub(crate) struct State {
     pub(crate) should_quit: bool,
     sender: Sender<NaiveDate>,
     pub(crate) today: NaiveDate,
+    pub(crate) show_metadata_pop_up: bool,
 }
 
 #[derive(Default)]
@@ -49,7 +50,12 @@ impl State {
             page_states: PageStates::default(),
             sender,
             today,
+            show_metadata_pop_up: false,
         }
+    }
+
+    pub(crate) fn toggle_metadata_pop_up(&mut self) {
+        self.show_metadata_pop_up = !self.show_metadata_pop_up;
     }
 
     pub(crate) fn reset_to_today(&mut self) {
