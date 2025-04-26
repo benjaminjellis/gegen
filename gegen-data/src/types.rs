@@ -18,6 +18,12 @@ pub struct LiveScoresResponse {
 #[serde(rename_all = "camelCase")]
 pub struct Match {
     pub id: String,
+    /// 1: first half
+    /// 2: second half
+    /// 10: half time
+    /// 14: full time
+    /// 16: yet to start
+    pub period: usize,
     pub status: Status,
     pub comp: Competition,
     #[serde(with = "ts_seconds")]

@@ -10,24 +10,18 @@ use throbber_widgets_tui::ThrobberState;
 
 use crate::State;
 
+const LEAGUES_PER_SCREEN: usize = 4;
+
 fn calculate_loading_layout(area: Rect) -> [Rect; 2] {
     let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     main_layout.areas(area)
 }
 
-fn calculate_loaded_layout(area: Rect) -> (Rect, Vec<Vec<Rect>>) {
+fn calculate_loaded_layout(area: Rect) -> (Rect, Vec<Rect>) {
     let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let block_layout = Layout::vertical([Constraint::Percentage(25); 4]);
+    let block_layout = Layout::vertical([Constraint::Percentage(25); LEAGUES_PER_SCREEN]);
     let [title_area, main_area] = main_layout.areas(area);
-    let main_areas = block_layout
-        .split(main_area)
-        .iter()
-        .map(|&area| {
-            Layout::horizontal([Constraint::Percentage(100)])
-                .split(area)
-                .to_vec()
-        })
-        .collect();
+    let main_areas = block_layout.split(main_area).to_vec();
     (title_area, main_areas)
 }
 
@@ -77,12 +71,20 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
                 data_grouped.push((key, chunk.collect::<Vec<_>>()));
             }
 
+            let offset = app_state
+                .page_states
+                .live_scores
+                .vertical_scroll
+                .min(data_grouped.len() - LEAGUES_PER_SCREEN);
+
+            let slice = &data_grouped[offset..offset + LEAGUES_PER_SCREEN];
+
             let (title_area, layout) = calculate_loaded_layout(frame.area());
             render_title(frame, title_area, date, &app_state.today);
 
-            for (idx, (key, _)) in data_grouped.into_iter().take(4).enumerate() {
+            for (idx, (key, _)) in slice.iter().enumerate() {
                 let paragraph = Paragraph::new("test".dark_gray()).wrap(Wrap { trim: true });
-                render_borders(&paragraph, frame, layout[idx][0], key.clone());
+                render_borders(&paragraph, frame, layout[idx], key.to_string());
             }
         }
         None => {

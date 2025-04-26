@@ -35,7 +35,13 @@ pub(crate) struct PageStates {
 #[derive(Default)]
 pub(crate) struct LiveScoresPageState {
     pub(crate) throbber_state: throbber_widgets_tui::ThrobberState,
-    pub(crate) scroll_offset: u16,
+    pub(crate) vertical_scroll: usize,
+}
+
+impl LiveScoresPageState {
+    pub(crate) fn reset_scroll_state(&mut self) {
+        self.vertical_scroll = 0;
+    }
 }
 
 impl State {
@@ -54,6 +60,32 @@ impl State {
         }
     }
 
+    pub(crate) fn scroll_down(&mut self) {
+        match self.current_page {
+            Page::Matches(_) => {
+                self.page_states.live_scores.vertical_scroll = self
+                    .page_states
+                    .live_scores
+                    .vertical_scroll
+                    .saturating_add(1);
+            }
+            Page::MatchOverview => (),
+        }
+    }
+
+    pub(crate) fn scroll_up(&mut self) {
+        match self.current_page {
+            Page::Matches(_) => {
+                self.page_states.live_scores.vertical_scroll = self
+                    .page_states
+                    .live_scores
+                    .vertical_scroll
+                    .saturating_sub(1);
+            }
+            Page::MatchOverview => (),
+        }
+    }
+
     pub(crate) fn toggle_metadata_pop_up(&mut self) {
         self.show_metadata_pop_up = !self.show_metadata_pop_up;
     }
@@ -69,6 +101,7 @@ impl State {
 
         let next_day = current_page_date.checked_sub_days(Days::new(1)).unwrap();
         self.current_page = Page::Matches(next_day);
+        self.page_states.live_scores.reset_scroll_state();
     }
 
     pub(crate) fn next_day(&mut self) {
@@ -78,6 +111,7 @@ impl State {
 
         let next_day = current_page_date.checked_add_days(Days::new(1)).unwrap();
         self.current_page = Page::Matches(next_day);
+        self.page_states.live_scores.reset_scroll_state();
     }
 
     pub(crate) fn should_draw(&mut self) -> bool {
