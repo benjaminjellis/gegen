@@ -1,52 +1,78 @@
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
+use chrono::NaiveDate;
+use crossbeam::channel::Receiver;
 use gegen_data::get_live_scores;
 
 use crate::state::LiveData;
 
-use color_eyre::eyre::Result;
-
 const FETCH_DELAY: Duration = Duration::from_secs(4);
 const DATA_FETCH_THREAD_NAME: &str = "data fetch thread";
 
-fn fetch_data(data: LiveData) -> Result<()> {
+fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>) {
     let client = reqwest::blocking::Client::new();
     let mut failure_count = 0;
+    let mut last_fetched_live_date = SystemTime::now();
+
     loop {
-        // tracing::info!("getting live scores");
-        match get_live_scores(&client) {
-            Ok(live_scores) => match data.write() {
-                Ok(mut data) => {
-                    *data = Some(live_scores);
-                    drop(data);
-                    failure_count = 0;
+        tracing::info!("start loop");
+        if let Ok(other_date) = recv.try_recv() {
+            tracing::info!("fetching data for {other_date}");
+            fetch_and_insert_data(&client, &data, other_date, &mut failure_count);
+        }
+
+        match last_fetched_live_date.elapsed() {
+            Ok(elapsed_since_last_fetch) => {
+                if elapsed_since_last_fetch > FETCH_DELAY {
+                    fetch_and_insert_data(&client, &data, current_date, &mut failure_count);
+                    last_fetched_live_date = SystemTime::now();
                 }
-                Err(err) => {
-                    tracing::error!("got error attempting to take write: {err}");
-                    failure_count += 1;
-                }
-            },
-            Err(err) => {
-                failure_count += 1;
-                tracing::error!("got error when fetching data: {err}");
             }
-        };
+            Err(err) => {
+                tracing::error!(
+                    "failed to calculate time elapsed since last fetch of live data: {err}"
+                );
+            }
+        }
 
         if failure_count >= 3 {
             tracing::error!("encountered three consecutive failutres to fetch data, aborting");
+            break;
         }
+    }
+}
 
-        std::thread::sleep(FETCH_DELAY);
+fn fetch_and_insert_data(
+    client: &reqwest::blocking::Client,
+    data: &LiveData,
+    date: NaiveDate,
+    failure_count: &mut u32,
+) {
+    match get_live_scores(client) {
+        Ok(live_scores) => {
+            data.insert(date, live_scores);
+
+            *failure_count = 0;
+        }
+        Err(err) => {
+            tracing::error!("got error when fetching data: {err}");
+
+            *failure_count += 1;
+        }
     }
 }
 
 // run the data collection thread in the background
-pub(crate) fn run_data_fetch(data: &LiveData) -> std::thread::JoinHandle<Result<()>> {
+pub(crate) fn run_data_fetch(
+    data: &LiveData,
+    current_date: NaiveDate,
+    recv: Receiver<NaiveDate>,
+) -> std::thread::JoinHandle<()> {
     std::thread::Builder::new()
         .name(DATA_FETCH_THREAD_NAME.into())
         .spawn({
             let data = data.clone();
-            move || fetch_data(data)
+            move || fetch_data(data, current_date, recv)
         })
-        .expect("Failed to {DATA_FETCH_THREAD_NAME} thread")
+        .expect("Failed to run thread: {DATA_FETCH_THREAD_NAME}")
 }

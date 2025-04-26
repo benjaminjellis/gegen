@@ -4,20 +4,13 @@ mod ui;
 
 use color_eyre::Result;
 use crossterm::event::{self};
+use dashmap::DashMap;
 use ratatui::DefaultTerminal;
 use state::State;
-use std::{
-    sync::{Arc, RwLock},
-    thread::JoinHandle,
-    time::Duration,
-};
+use std::{sync::Arc, thread::JoinHandle, time::Duration};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 fn main() -> Result<()> {
-    let data = Arc::new(RwLock::new(None));
-
-    let data_join_handle = data_fetch::run_data_fetch(&data);
-
     color_eyre::install()?;
     let terminal = ratatui::init();
 
@@ -38,19 +31,25 @@ fn main() -> Result<()> {
         )
         .init();
 
-    let ui_state = State::new(data);
+    let data = Arc::new(DashMap::new());
 
-    run(terminal, &data_join_handle, ui_state)?;
+    let (sender, recv) = crossbeam::channel::unbounded();
+
+    let app_state = State::new(data.clone(), sender);
+
+    let data_join_handle = data_fetch::run_data_fetch(&data, app_state.today, recv);
+
+    // pre fetch data
+    app_state.fetch_data_for_date(app_state.today);
+    tracing::info!("pre fetch");
+
+    run(terminal, &data_join_handle, app_state)?;
 
     // if data_join_handle.is_finished() {}
     Ok(())
 }
 
-fn run(
-    mut terminal: DefaultTerminal,
-    _: &JoinHandle<Result<()>>,
-    mut app_state: State,
-) -> Result<()> {
+fn run(mut terminal: DefaultTerminal, _: &JoinHandle<()>, mut app_state: State) -> Result<()> {
     loop {
         if app_state.should_quit {
             break;

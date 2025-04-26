@@ -1,14 +1,18 @@
 use std::{
-    sync::{Arc, RwLock},
+    sync::Arc,
     time::{Duration, SystemTime},
 };
 
+use chrono::{Days, Local, NaiveDate};
+use crossbeam::channel::Sender;
+use dashmap::DashMap;
 use gegen_data::types::LiveScoresResponse;
 
-pub(crate) type LiveData = Arc<RwLock<Option<LiveScoresResponse>>>;
+pub(crate) type LiveData = Arc<DashMap<NaiveDate, LiveScoresResponse>>;
 
 pub(crate) enum Page {
-    LiveScores,
+    Matches(NaiveDate),
+    MatchOverview,
 }
 
 pub(crate) struct State {
@@ -18,6 +22,8 @@ pub(crate) struct State {
     pub(crate) current_page: Page,
     pub(crate) page_states: PageStates,
     pub(crate) should_quit: bool,
+    sender: Sender<NaiveDate>,
+    pub(crate) today: NaiveDate,
 }
 
 #[derive(Default)]
@@ -28,18 +34,44 @@ pub(crate) struct PageStates {
 #[derive(Default)]
 pub(crate) struct LiveScoresPageState {
     pub(crate) throbber_state: throbber_widgets_tui::ThrobberState,
+    pub(crate) scroll_offset: u16,
 }
 
 impl State {
-    pub(crate) fn new(data: LiveData) -> Self {
+    pub(crate) fn new(data: LiveData, sender: Sender<NaiveDate>) -> Self {
+        let today = get_todays_date();
         Self {
             data,
             tick_rate: Duration::from_millis(150),
             last_tick: SystemTime::now(),
-            current_page: Page::LiveScores,
+            current_page: Page::Matches(today),
             should_quit: false,
             page_states: PageStates::default(),
+            sender,
+            today,
         }
+    }
+
+    pub(crate) fn reset_to_today(&mut self) {
+        self.current_page = Page::Matches(self.today);
+    }
+
+    pub(crate) fn previous_day(&mut self) {
+        let Page::Matches(current_page_date) = self.current_page else {
+            return;
+        };
+
+        let next_day = current_page_date.checked_sub_days(Days::new(1)).unwrap();
+        self.current_page = Page::Matches(next_day);
+    }
+
+    pub(crate) fn next_day(&mut self) {
+        let Page::Matches(current_page_date) = self.current_page else {
+            return;
+        };
+
+        let next_day = current_page_date.checked_add_days(Days::new(1)).unwrap();
+        self.current_page = Page::Matches(next_day);
     }
 
     pub(crate) fn should_draw(&mut self) -> bool {
@@ -53,5 +85,16 @@ impl State {
 
     pub(crate) fn on_tick(&mut self) {
         self.page_states.live_scores.throbber_state.calc_next();
+        self.today = get_todays_date();
     }
+
+    pub(crate) fn fetch_data_for_date(&self, date: NaiveDate) {
+        if let Err(err) = self.sender.try_send(date) {
+            tracing::error!("failed to send date to data fetch thread: {err}")
+        }
+    }
+}
+
+fn get_todays_date() -> NaiveDate {
+    Local::now().date_naive()
 }

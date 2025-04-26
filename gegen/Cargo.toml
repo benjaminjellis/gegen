@@ -4,9 +4,13 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+chrono = { workspace = true }
 color-eyre = { workspace = true }
+crossbeam = { workspace = true }
 crossterm = { workspace = true }
+dashmap = { workspace = true }
 gegen-data = { path = "../gegen-data" }
+itertools = { workspace = true }
 ratatui = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 tracing = { workspace = true }
