@@ -3,13 +3,12 @@ use std::time::{Duration, SystemTime};
 use chrono::NaiveDate;
 use crossbeam::channel::Receiver;
 use gegen_data::get_live_scores;
-use spin_sleep::SpinSleeper;
 
 use crate::state::LiveData;
 
 const FETCH_DELAY: Duration = Duration::from_secs(4);
 const DATA_FETCH_THREAD_NAME: &str = "data fetch thread";
-const SLEEP: Duration = Duration::from_millis(1);
+const SLEEP: Duration = Duration::from_micros(50);
 
 fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>) {
     let client = reqwest::blocking::Client::new();
@@ -45,7 +44,7 @@ fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>
         // HACK: waiting on try_recv to receive a message means this is a busy-wait and thus chews
         // through cpu cycles. Sleeping fixes that so the thread yields and the OS can go a spend
         // cpu cycles elsewhere.
-        std::thread::sleep(Duration::from_millis(2));
+        std::thread::sleep(SLEEP);
     }
 }
 

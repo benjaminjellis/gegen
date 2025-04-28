@@ -56,14 +56,9 @@ fn run(
     mut app_state: State,
 ) -> Result<()> {
     loop {
-        if app_state.should_quit {
+        if app_state.should_quit || data_join_handle.is_finished() {
             break;
         }
-
-        // if data_join_handle.is_finished() {
-        //     tracing::error!("gegen quit due to the data fetching thread completeting");
-        //     break;
-        // }
 
         if event::poll(Duration::ZERO)? {
             let event = event::read()?;

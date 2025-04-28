@@ -12,6 +12,7 @@ pub(crate) type LiveData = Arc<DashMap<NaiveDate, LiveScoresResponse>>;
 
 pub(crate) enum Page {
     Matches(NaiveDate),
+    #[allow(dead_code)]
     MatchOverview(NaiveDate, String),
 }
 
