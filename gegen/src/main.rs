@@ -60,10 +60,10 @@ fn run(
             break;
         }
 
-        if data_join_handle.is_finished() {
-            tracing::error!("gegen quit due to the data fetching thread completeting");
-            break;
-        }
+        // if data_join_handle.is_finished() {
+        //     tracing::error!("gegen quit due to the data fetching thread completeting");
+        //     break;
+        // }
 
         if event::poll(Duration::ZERO)? {
             let event = event::read()?;

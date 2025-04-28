@@ -20,6 +20,7 @@ pub struct Match {
     pub id: String,
     /// 1: first half
     /// 2: second half
+    /// 5: penalties
     /// 10: half time
     /// 14: full time
     /// 16: yet to start
@@ -43,6 +44,28 @@ pub enum Event {
     Goal(GoalEvent),
     Card(CardEvent),
     Var(VAREvent),
+    Pen(PenaltyEvent),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", tag = "entity_type")]
+pub struct PenaltyEvent {
+    pub period_id: u8,
+    pub min: u16,
+    pub time_str: String,
+    pub team_id: String,
+    pub player_id: String,
+    pub player_name: String,
+    pub outcome: PenaltyOutcome,
+    pub pen_num: usize,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PenaltyOutcome {
+    Saved,
+    Scored,
+    Missed,
 }
 
 #[derive(Debug, Deserialize)]
@@ -126,6 +149,7 @@ pub enum ScoreKey {
     Total,
     Aggregate,
     TotalUnconfirmed,
+    Pen,
 }
 
 #[derive(Debug, Deserialize)]
@@ -163,4 +187,5 @@ pub enum Status {
     Played,
     Fixture,
     Playing,
+    Postponed,
 }

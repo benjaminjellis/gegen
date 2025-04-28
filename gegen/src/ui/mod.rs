@@ -32,14 +32,14 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                 }
             }
         }
-        Page::MatchOverview => todo!(),
+        Page::MatchOverview(..) => todo!(),
     }
 }
 
 pub(crate) fn draw_page(frame: &mut Frame, app_state: &mut State) {
     match app_state.current_page {
         Page::Matches(date) => pages::live_scores::draw(frame, app_state, &date),
-        Page::MatchOverview => unimplemented!(),
+        Page::MatchOverview(..) => unimplemented!(),
     }
 
     if app_state.show_metadata_pop_up {

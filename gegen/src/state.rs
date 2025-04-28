@@ -12,7 +12,7 @@ pub(crate) type LiveData = Arc<DashMap<NaiveDate, LiveScoresResponse>>;
 
 pub(crate) enum Page {
     Matches(NaiveDate),
-    MatchOverview,
+    MatchOverview(NaiveDate, String),
 }
 
 pub(crate) struct State {
@@ -49,7 +49,7 @@ impl State {
         let today = get_todays_date();
         Self {
             data,
-            tick_rate: Duration::from_millis(150),
+            tick_rate: Duration::from_millis(250),
             last_tick: SystemTime::now(),
             current_page: Page::Matches(today),
             should_quit: false,
@@ -67,9 +67,9 @@ impl State {
                     .page_states
                     .live_scores
                     .vertical_scroll
-                    .saturating_add(1);
+                    .saturating_add(1)
             }
-            Page::MatchOverview => (),
+            Page::MatchOverview(..) => (),
         }
     }
 
@@ -82,7 +82,7 @@ impl State {
                     .vertical_scroll
                     .saturating_sub(1);
             }
-            Page::MatchOverview => (),
+            Page::MatchOverview(..) => (),
         }
     }
 

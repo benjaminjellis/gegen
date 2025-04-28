@@ -13,6 +13,7 @@ gegen-data = { path = "../gegen-data" }
 itertools = { workspace = true }
 ratatui = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
+spin_sleep = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
 tracing-appender = { workspace = true }
