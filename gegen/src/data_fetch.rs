@@ -2,7 +2,7 @@ use std::time::{Duration, SystemTime};
 
 use chrono::NaiveDate;
 use crossbeam::channel::Receiver;
-use gegen_data::get_live_scores;
+use gegen_data::{get_live_scores, get_matches};
 
 use crate::state::LiveData;
 
@@ -18,14 +18,26 @@ fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>
     loop {
         if let Ok(other_date) = recv.try_recv() {
             tracing::info!("fetching data for {other_date}");
-            fetch_and_insert_data(&client, &data, other_date, &mut failure_count);
+            fetch_and_insert_data(
+                &client,
+                &data,
+                other_date,
+                &mut failure_count,
+                DataToFetch::Fixtures,
+            );
         }
 
         match last_fetched_live_date.elapsed() {
             Ok(elapsed_since_last_fetch) => {
                 if elapsed_since_last_fetch > FETCH_DELAY {
                     tracing::info!("FETCH");
-                    fetch_and_insert_data(&client, &data, current_date, &mut failure_count);
+                    fetch_and_insert_data(
+                        &client,
+                        &data,
+                        current_date,
+                        &mut failure_count,
+                        DataToFetch::Live,
+                    );
                     last_fetched_live_date = SystemTime::now();
                 }
             }
@@ -53,8 +65,13 @@ fn fetch_and_insert_data(
     data: &LiveData,
     date: NaiveDate,
     failure_count: &mut u32,
+    data_to_fetch: DataToFetch,
 ) {
-    match get_live_scores(client) {
+    let response = match data_to_fetch {
+        DataToFetch::Live => get_live_scores(client),
+        DataToFetch::Fixtures => get_matches(client, date),
+    };
+    match response {
         Ok(live_scores) => {
             data.insert(date, live_scores);
 
@@ -66,6 +83,11 @@ fn fetch_and_insert_data(
             *failure_count += 1;
         }
     }
+}
+
+enum DataToFetch {
+    Live,
+    Fixtures,
 }
 
 // run the data collection thread in the background

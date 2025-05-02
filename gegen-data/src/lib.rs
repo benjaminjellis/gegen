@@ -7,8 +7,8 @@ pub mod types;
 mod utils;
 
 const BASE_URL: &str = "https://optaplayerstats.statsperform.com/api/";
-const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "ro_RO/soccer/livescores");
-const MATTCHES_URL: &str = concatcp!(BASE_URL, "ro_RO/soccer/matches/");
+const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/livescores");
+const MATTCHES_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/matches/");
 
 pub fn get_live_scores(
     client: &reqwest::blocking::Client,

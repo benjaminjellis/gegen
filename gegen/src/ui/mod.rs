@@ -26,8 +26,27 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                     KeyCode::Char('t') => app_state.reset_to_today(),
                     KeyCode::Char('m') => app_state.toggle_metadata_pop_up(),
                     KeyCode::Char('g') => app_state.page_states.live_scores.reset_scroll_state(),
-                    KeyCode::Down => app_state.scroll_down(),
-                    KeyCode::Up => app_state.scroll_up(),
+                    KeyCode::Tab => {
+                        let Some(grouped_data) = app_state.get_grouped_data() else {
+                            return;
+                        };
+                        // subtract one here because tabs are zero indexed
+                        let max_no_tabs = grouped_data.len() - 1;
+
+                        app_state.page_states.live_scores.selected_tab = app_state
+                            .page_states
+                            .live_scores
+                            .selected_tab
+                            .saturating_add(1)
+                            .min(max_no_tabs);
+                    }
+                    KeyCode::BackTab => {
+                        app_state.page_states.live_scores.selected_tab = app_state
+                            .page_states
+                            .live_scores
+                            .selected_tab
+                            .saturating_sub(1);
+                    }
                     _ => (),
                 }
             }

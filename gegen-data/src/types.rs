@@ -14,7 +14,7 @@ pub struct LiveScoresResponse {
     pub matches: Vec<Match>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Match {
     pub id: String,
@@ -37,7 +37,7 @@ pub struct Match {
     pub updated: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase", tag = "entity_type")]
 pub enum Event {
     Sub(SubEvent),
@@ -47,7 +47,7 @@ pub enum Event {
     Pen(PenaltyEvent),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase", tag = "entity_type")]
 pub struct PenaltyEvent {
     pub period_id: u8,
@@ -60,7 +60,7 @@ pub struct PenaltyEvent {
     pub pen_num: usize,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum PenaltyOutcome {
     Saved,
@@ -68,7 +68,7 @@ pub enum PenaltyOutcome {
     Missed,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct VAREvent {
     pub period_id: u8,
@@ -83,7 +83,7 @@ pub struct VAREvent {
     pub decision: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CardEvent {
     pub period_id: u8,
@@ -94,7 +94,7 @@ pub struct CardEvent {
     pub card_type: Card,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub enum Card {
     #[serde(rename = "YC")]
     Yellow,
@@ -104,7 +104,7 @@ pub enum Card {
     Red,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GoalEvent {
     pub period_id: u8,
@@ -118,7 +118,7 @@ pub struct GoalEvent {
     pub score: Option<[u8; 2]>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, Copy)]
 pub enum GoalType {
     #[serde(rename = "G")]
     Goal,
@@ -128,7 +128,7 @@ pub enum GoalType {
     OwnGoal,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SubEvent {
     pub period_id: u8,
@@ -141,7 +141,7 @@ pub struct SubEvent {
     pub player2_name: String,
 }
 
-#[derive(Hash, Eq, PartialEq, PartialOrd, Ord, Debug, Deserialize)]
+#[derive(Hash, Eq, PartialEq, PartialOrd, Ord, Debug, Deserialize, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum ScoreKey {
     Ft,
@@ -152,14 +152,14 @@ pub enum ScoreKey {
     Pen,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct Score {
     pub home: u8,
     pub away: u8,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Competition {
     pub id: String,
@@ -167,7 +167,7 @@ pub struct Competition {
     pub country: Country,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Country {
     pub id: String,
@@ -181,7 +181,7 @@ pub struct Team {
     pub name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum Status {
     Played,
