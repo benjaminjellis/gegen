@@ -157,7 +157,7 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
                 format!("{time}'"),
                 Style::new().red().bold().italic(),
                 format!("{} - {}", current_score.home, current_score.away),
-                Style::new().red().bold(),
+                Style::new().red().bold().italic(),
             )
         }
         // yet to start

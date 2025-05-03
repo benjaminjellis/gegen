@@ -8,7 +8,7 @@ use crate::state::LiveData;
 
 const FETCH_DELAY: Duration = Duration::from_secs(4);
 const DATA_FETCH_THREAD_NAME: &str = "data fetch thread";
-const SLEEP: Duration = Duration::from_micros(50);
+const SLEEP: Duration = Duration::from_millis(100);
 
 fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>) {
     let client = reqwest::blocking::Client::new();
@@ -62,7 +62,7 @@ fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>
             break;
         }
 
-        // HACK: waiting on try_recv to receive a message means this is a busy-wait and thus chews
+        // HACK: try_recv returns imeditealy so without a sleep this loop is a busy-wait and thus chews
         // through cpu cycles. Sleeping fixes that so the thread yields and the OS can go a spend
         // cpu cycles elsewhere.
         std::thread::sleep(SLEEP);
