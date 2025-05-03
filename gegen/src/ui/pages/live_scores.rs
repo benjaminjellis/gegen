@@ -17,7 +17,20 @@ fn calculate_loading_layout(area: Rect) -> [Rect; 2] {
     main_layout.areas(area)
 }
 
-fn render_title(frame: &mut Frame, area: Rect, date: &NaiveDate, todays_date: &NaiveDate) {
+fn render_title(
+    frame: &mut Frame,
+    area: Rect,
+    date: &NaiveDate,
+    todays_date: &NaiveDate,
+    tab_title: String,
+) {
+    let layout = Layout::horizontal([
+        Constraint::Min(0),
+        Constraint::Percentage(50),
+        Constraint::Percentage(50),
+        Constraint::Min(1),
+    ]);
+    let [_, left_area, right_area, _] = layout.areas(area);
     let weekday = date.weekday();
     let title = if date == todays_date {
         format!("Today ({weekday} - {date})")
@@ -28,9 +41,18 @@ fn render_title(frame: &mut Frame, area: Rect, date: &NaiveDate, todays_date: &N
     frame.render_widget(
         Paragraph::new(title)
             .light_green()
-            .bold()
-            .alignment(Alignment::Center),
-        area,
+            .alignment(Alignment::Left)
+            .bold(),
+        left_area,
+    );
+
+    frame.render_widget(
+        Paragraph::new(tab_title)
+            .light_green()
+            .alignment(Alignment::Right)
+            .magenta()
+            .bold(),
+        right_area,
     );
 }
 
@@ -52,15 +74,18 @@ fn render_loading(frame: &mut Frame, area: Rect, throbber_state: &mut ThrobberSt
 pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
     match app_state.get_grouped_data() {
         Some(data_grouped) => {
-            let vertical = Layout::vertical([
-                Constraint::Length(1),
-                Constraint::Min(0),
-                Constraint::Length(1),
-            ]);
-            let [header_area, inner_area, footer_area] = vertical.areas(frame.area());
+            let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+            let [header_area, inner_area] = vertical.areas(frame.area());
 
             let horizontal = Layout::vertical([Constraint::Min(1), Constraint::Percentage(100)]);
             let [tabs_area, content_area] = horizontal.areas(inner_area);
+
+            let st = app_state.page_states.live_scores.selected_tab;
+
+            let tab_title = match data_grouped.get(st) {
+                Some((key, _)) => key.clone(),
+                None => "".into(),
+            };
 
             let titles = data_grouped.iter().map(|(key, _)| {
                 let mut tab_title = key.to_string();
@@ -68,7 +93,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
                 Line::from(tab_title)
             });
 
-            render_title(frame, header_area, date, &app_state.today);
+            render_title(frame, header_area, date, &app_state.today, tab_title);
 
             // tabs
             let highlight_style = Style::new().bg(Color::Green).fg(Color::Magenta).bold();
@@ -83,18 +108,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
                 // .padding(Padding::horizontal(1))
                 .border_style(Color::Green);
 
-            let st = app_state.page_states.live_scores.selected_tab;
-
-            let tab_title = match data_grouped.get(st) {
-                Some((key, _)) => key.clone(),
-                None => "".into(),
-            };
-
-            Paragraph::new(tab_title)
-                .style(Style::new().magenta())
-                .render(footer_area, frame.buffer_mut());
-
-            let Some(fixtures) = data_grouped.get(*app_state.selected_tab()) else {
+            let Some(fixtures) = data_grouped.get(st) else {
                 return;
             };
 
@@ -127,7 +141,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
             app_state.fetch_data_for_date(*date);
             let [title_area, layout] = calculate_loading_layout(frame.area());
 
-            render_title(frame, title_area, date, &app_state.today);
+            render_title(frame, title_area, date, &app_state.today, "".to_string());
             render_loading(
                 frame,
                 layout,
@@ -148,15 +162,22 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
         1 | 2 => {
             let scores = fixture.score.clone().unwrap_or_default();
 
-            let current_score = scores.get(&gegen_data::types::ScoreKey::Total).expect(
-                "period is 1 or 2 (first of second half) but no total scores were provided",
-            );
-            let time = &fixture.time.unwrap_or(0);
+            let unconfimed_score = scores.get(&gegen_data::types::ScoreKey::TotalUnconfirmed);
 
+            let score = if let Some(score) = unconfimed_score {
+                format!("{}* - {}*", score.home, score.away)
+            } else {
+                let current_score = scores.get(&gegen_data::types::ScoreKey::Total).expect(
+                    "period is 1 or 2 (first of second half) but no total scores were provided",
+                );
+                format!("{} - {}", current_score.home, current_score.away)
+            };
+
+            let time = &fixture.time.unwrap_or(0);
             (
                 format!("{time}'"),
                 Style::new().red().bold().italic(),
-                format!("{} - {}", current_score.home, current_score.away),
+                score,
                 Style::new().red().bold().italic(),
             )
         }
