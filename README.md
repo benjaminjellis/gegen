@@ -14,3 +14,16 @@ cargo run --release
 ```
 
 I plan to release via crates.io when the project is more stable as well as providing binarys via github releases.
+
+
+### Generating demo gifs
+
+[vhs](https://github.com/charmbracelet/vhs) files are defined in `.vhs` and can be used to generate demo gifs
+
+```shell
+vhs .vhs/demo.tape
+```
+```
+
+
+
