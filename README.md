@@ -4,9 +4,7 @@
 
 
 ## Demo
-
-coming soon
-
+![demo](./assets/demo.gif)
 
 ## Installation
 
