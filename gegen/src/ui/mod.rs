@@ -70,32 +70,47 @@ pub(crate) fn draw_page(frame: &mut Frame, app_state: &mut State) {
     }
 
     if app_state.show_metadata_pop_up {
-        let block = Block::bordered()
-            .title("Metadata")
-            .title_style(Style::new().red());
-        let paragraph = Paragraph::new(vec![
-            Line::raw(format!("version: {GEGEN_VERSION}")),
-            Line::raw("github: https://github.com/benjaminjellis/gegen"),
-        ]);
-        let area = popup_area(frame.area(), 60, 20);
-        frame.render_widget(Clear, area); //this clears out the background
-        frame.render_widget(paragraph.block(block), area);
+        draw_metadata_pop_up(frame);
     }
 
     if app_state.show_key_bind_pop_up {
-        let block = Block::bordered()
-            .title("Key binds")
-            .title_style(Style::new().red());
-
-        let paragraph = Paragraph::new(vec![
-            Line::raw(format!("version: {GEGEN_VERSION}")),
-            Line::raw("github: https://github.com/benjaminjellis/gegen"),
-        ]);
-
-        let area = popup_area(frame.area(), 60, 20);
-        frame.render_widget(Clear, area); //this clears out the background
-        frame.render_widget(paragraph.block(block), area);
+        draw_key_bind_pop_up(frame, app_state)
     }
+}
+
+fn draw_metadata_pop_up(frame: &mut Frame) {
+    let block = Block::bordered()
+        .title("Metadata")
+        .title_style(Style::new().red());
+    let paragraph = Paragraph::new(vec![
+        Line::raw(format!("version: {GEGEN_VERSION}")),
+        Line::raw("github: https://github.com/benjaminjellis/gegen"),
+    ]);
+    let area = popup_area(frame.area(), 60, 20);
+    frame.render_widget(Clear, area); //this clears out the background
+    frame.render_widget(paragraph.block(block), area);
+}
+
+fn draw_key_bind_pop_up(frame: &mut Frame, app_state: &mut State) {
+    let block = Block::bordered()
+        .title("Key binds")
+        .title_style(Style::new().red());
+
+    let paragraph = match app_state.current_page {
+        Page::Matches(_) => Paragraph::new(vec![
+            Line::raw("q - quit".to_string()),
+            Line::raw("tab - next competition".to_string()),
+            Line::raw("shift + tab - previous competition".to_string()),
+            Line::raw("n - next day".to_string()),
+            Line::raw("p - previous day".to_string()),
+            Line::raw("t - today".to_string()),
+        ]),
+        Page::MatchOverview(..) => Paragraph::new(vec![]),
+    };
+
+    let area = popup_area(frame.area(), 60, 50);
+    frame.render_widget(Clear, area); //this clears out the background
+    frame.render_widget(paragraph.block(block), area);
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

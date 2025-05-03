@@ -155,7 +155,7 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
             let time = &fixture.time.unwrap_or(0);
 
             (
-                format!("{time}"),
+                format!("{time}'"),
                 Style::new().red().bold().italic(),
                 format!("{} - {}", current_score.home, current_score.away),
                 Style::new().red().bold(),
