@@ -41,10 +41,6 @@ fn main() -> Result<()> {
 
     let data_join_handle = data_fetch::run_data_fetch(&data, app_state.today, recv);
 
-    // pre fetch data
-    app_state.fetch_data_for_date(app_state.today);
-    tracing::info!("pre fetch");
-
     run(terminal, &data_join_handle, app_state)?;
 
     Ok(())

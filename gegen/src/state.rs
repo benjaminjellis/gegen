@@ -8,6 +8,7 @@ use crossbeam::channel::Sender;
 use dashmap::DashMap;
 use gegen_data::types::{LiveScoresResponse, Match};
 use itertools::Itertools;
+use ratatui::widgets::TableState;
 
 pub(crate) type LiveData = Arc<DashMap<NaiveDate, LiveScoresResponse>>;
 
@@ -27,6 +28,7 @@ pub(crate) struct State {
     sender: Sender<NaiveDate>,
     pub(crate) today: NaiveDate,
     pub(crate) show_metadata_pop_up: bool,
+    pub(crate) show_key_bind_pop_up: bool,
 }
 
 #[derive(Default)]
@@ -38,6 +40,7 @@ pub(crate) struct PageStates {
 pub(crate) struct LiveScoresPageState {
     pub(crate) throbber_state: throbber_widgets_tui::ThrobberState,
     pub(crate) selected_tab: usize,
+    pub(crate) table_state: TableState,
 }
 
 impl LiveScoresPageState {
@@ -59,14 +62,20 @@ impl State {
             sender,
             today,
             show_metadata_pop_up: false,
+            show_key_bind_pop_up: false,
         }
     }
 
     pub(crate) fn selected_tab(&self) -> &usize {
         &self.page_states.live_scores.selected_tab
     }
+
     pub(crate) fn toggle_metadata_pop_up(&mut self) {
         self.show_metadata_pop_up = !self.show_metadata_pop_up;
+    }
+
+    pub(crate) fn toggle_key_bind_pop_up(&mut self) {
+        self.show_key_bind_pop_up = !self.show_key_bind_pop_up;
     }
 
     pub(crate) fn reset_to_today(&mut self) {
@@ -108,6 +117,9 @@ impl State {
     }
 
     pub(crate) fn fetch_data_for_date(&self, date: NaiveDate) {
+        if date == self.today {
+            return;
+        }
         if let Err(err) = self.sender.try_send(date) {
             tracing::error!("failed to send date to data fetch thread: {err}")
         }
@@ -127,7 +139,7 @@ impl State {
                     .chunk_by(|m| format!("{} - {}", m.comp.country.full_name, m.comp.name,))
                 {
                     // TODO: see if there's a way to remove this clone
-                    data_grouped.push((key, chunk.map(|m| m.clone()).collect::<Vec<Match>>()));
+                    data_grouped.push((key, chunk.cloned().collect::<Vec<Match>>()));
                 }
                 Some(data_grouped)
             }

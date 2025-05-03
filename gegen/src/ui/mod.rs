@@ -15,8 +15,14 @@ use crate::{
 
 pub(crate) fn process_event(event: Event, app_state: &mut State) {
     if let Event::Key(key) = event {
-        app_state.should_quit = KeyCode::Char('q') == key.code;
+        match key.code {
+            KeyCode::Char('q') => app_state.should_quit = true,
+            KeyCode::Char('m') => app_state.toggle_metadata_pop_up(),
+            KeyCode::Char('?') => app_state.toggle_key_bind_pop_up(),
+            _ => (),
+        }
     }
+
     match app_state.current_page {
         Page::Matches(_) => {
             if let Event::Key(key) = event {
@@ -24,7 +30,6 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                     KeyCode::Char('n') => app_state.next_day(),
                     KeyCode::Char('p') => app_state.previous_day(),
                     KeyCode::Char('t') => app_state.reset_to_today(),
-                    KeyCode::Char('m') => app_state.toggle_metadata_pop_up(),
                     KeyCode::Char('g') => app_state.page_states.live_scores.reset_scroll_state(),
                     KeyCode::Tab => {
                         let Some(grouped_data) = app_state.get_grouped_data() else {
@@ -39,6 +44,7 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                             .selected_tab
                             .saturating_add(1)
                             .min(max_no_tabs);
+                        app_state.page_states.live_scores.table_state = Default::default();
                     }
                     KeyCode::BackTab => {
                         app_state.page_states.live_scores.selected_tab = app_state
@@ -46,6 +52,8 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                             .live_scores
                             .selected_tab
                             .saturating_sub(1);
+
+                        app_state.page_states.live_scores.table_state = Default::default();
                     }
                     _ => (),
                 }
@@ -69,6 +77,21 @@ pub(crate) fn draw_page(frame: &mut Frame, app_state: &mut State) {
             Line::raw(format!("version: {GEGEN_VERSION}")),
             Line::raw("github: https://github.com/benjaminjellis/gegen"),
         ]);
+        let area = popup_area(frame.area(), 60, 20);
+        frame.render_widget(Clear, area); //this clears out the background
+        frame.render_widget(paragraph.block(block), area);
+    }
+
+    if app_state.show_key_bind_pop_up {
+        let block = Block::bordered()
+            .title("Key binds")
+            .title_style(Style::new().red());
+
+        let paragraph = Paragraph::new(vec![
+            Line::raw(format!("version: {GEGEN_VERSION}")),
+            Line::raw("github: https://github.com/benjaminjellis/gegen"),
+        ]);
+
         let area = popup_area(frame.area(), 60, 20);
         frame.render_widget(Clear, area); //this clears out the background
         frame.render_widget(paragraph.block(block), area);

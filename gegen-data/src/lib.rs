@@ -7,7 +7,7 @@ pub mod types;
 mod utils;
 
 const BASE_URL: &str = "https://optaplayerstats.statsperform.com/api/";
-const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/livescores");
+const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/livescores/");
 const MATTCHES_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/matches/");
 
 pub fn get_live_scores(
@@ -49,7 +49,7 @@ pub fn get_matches(
     client: &reqwest::blocking::Client,
     date: NaiveDate,
 ) -> Result<LiveScoresResponse, GegenDataError> {
-    let url = format!("{MATTCHES_URL}/{date}");
+    let url = format!("{MATTCHES_URL}{date}");
     let live_score_query_params = types::LiveScoreQueryParams { offset: 0 };
 
     let headers = utils::create_header_maps();
@@ -88,7 +88,7 @@ pub enum GegenDataError {
         url: String,
         body: String,
     },
-    #[error("Failed to deserialise response")]
+    #[error("Failed to deserialise response for {url}: {source:?}")]
     Serialisation { source: reqwest::Error, url: String },
 }
 
@@ -100,5 +100,14 @@ mod tests {
     fn test_live_scores() {
         let client = reqwest::blocking::Client::new();
         let _ = get_live_scores(&client).unwrap();
+    }
+
+    #[test]
+    fn test_fixtures() {
+        let date = NaiveDate::from_ymd_opt(2025, 4, 27).unwrap();
+
+        let client = reqwest::blocking::Client::new();
+
+        let _ = get_matches(&client, date).unwrap();
     }
 }

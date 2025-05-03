@@ -25,6 +25,7 @@ pub struct Match {
     /// 14: full time
     /// 16: yet to start
     pub period: usize,
+    pub time: Option<usize>,
     pub status: Status,
     pub comp: Competition,
     #[serde(with = "ts_seconds")]
@@ -150,9 +151,10 @@ pub enum ScoreKey {
     Aggregate,
     TotalUnconfirmed,
     Pen,
+    Et,
 }
 
-#[derive(Debug, Deserialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Clone, Copy, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Score {
     pub home: u8,
@@ -174,11 +176,12 @@ pub struct Country {
     pub full_name: String,
 }
 
+// If eithier element is null then the team is TBC
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Team {
-    pub id: String,
-    pub name: String,
+    pub id: Option<String>,
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
