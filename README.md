@@ -9,7 +9,7 @@
 
 Currently the only way to install is to clone this repo and run 
 
-```
+```shell
 cargo run --release
 ```
 
@@ -23,7 +23,4 @@ I plan to release via crates.io when the project is more stable as well as provi
 ```shell
 vhs .vhs/demo.tape
 ```
-```
-
-
 
