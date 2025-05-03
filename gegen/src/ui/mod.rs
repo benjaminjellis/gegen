@@ -86,7 +86,7 @@ fn draw_metadata_pop_up(frame: &mut Frame) {
         Line::raw(format!("version: {GEGEN_VERSION}")),
         Line::raw("github: https://github.com/benjaminjellis/gegen"),
     ]);
-    let area = popup_area(frame.area(), 60, 20);
+    let area = popup_area(frame.area(), 60, 30);
     frame.render_widget(Clear, area); //this clears out the background
     frame.render_widget(paragraph.block(block), area);
 }

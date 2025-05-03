@@ -8,6 +8,7 @@ use dashmap::DashMap;
 use ratatui::DefaultTerminal;
 use state::State;
 use std::{sync::Arc, thread::JoinHandle, time::Duration};
+use tracing_appender::rolling::Rotation;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub(crate) const GEGEN_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -16,7 +17,12 @@ fn main() -> Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
 
-    let file_appender = tracing_appender::rolling::minutely("./.logs", "gegen.log");
+    let file_appender = tracing_appender::rolling::RollingFileAppender::builder()
+        .max_log_files(10)
+        .rotation(Rotation::HOURLY)
+        .filename_prefix("gegen.log")
+        .build("./.logs")
+        .expect("failed to build file appender");
 
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 

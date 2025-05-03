@@ -135,7 +135,6 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
             );
         }
     }
-    tracing::info!("drop read lock");
 }
 
 fn build_row(idx: usize, fixture: &Match) -> Row {
