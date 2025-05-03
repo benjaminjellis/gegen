@@ -7,8 +7,8 @@ pub mod types;
 mod utils;
 
 const BASE_URL: &str = "https://optaplayerstats.statsperform.com/api/";
-const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/livescores/");
-const MATTCHES_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/matches/");
+const LIVE_SCORE_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/livescores");
+const MATTCHES_URL: &str = concatcp!(BASE_URL, "en_GB/soccer/matches");
 
 pub fn get_live_scores(
     client: &reqwest::blocking::Client,
@@ -49,7 +49,7 @@ pub fn get_matches(
     client: &reqwest::blocking::Client,
     date: NaiveDate,
 ) -> Result<LiveScoresResponse, GegenDataError> {
-    let url = format!("{MATTCHES_URL}{date}");
+    let url = format!("{MATTCHES_URL}/{date}");
     let live_score_query_params = types::LiveScoreQueryParams { offset: 0 };
 
     let headers = utils::create_header_maps();
