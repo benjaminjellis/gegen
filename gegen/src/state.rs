@@ -66,6 +66,18 @@ impl State {
         }
     }
 
+    pub(crate) fn selected_row(&self) -> Option<usize> {
+        self.page_states.live_scores.table_state.selected()
+    }
+
+    pub(crate) fn previous_row(&mut self) {
+        self.page_states.live_scores.table_state.select_previous();
+    }
+
+    pub(crate) fn next_row(&mut self) {
+        self.page_states.live_scores.table_state.select_next();
+    }
+
     pub(crate) fn selected_tab(&self) -> &usize {
         &self.page_states.live_scores.selected_tab
     }

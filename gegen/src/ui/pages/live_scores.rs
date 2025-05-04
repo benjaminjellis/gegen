@@ -63,7 +63,7 @@ fn render_loading(frame: &mut Frame, area: Rect, throbber_state: &mut ThrobberSt
         .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
         .throbber_style(
             ratatui::style::Style::default()
-                .fg(ratatui::style::Color::Red)
+                .fg(ratatui::style::Color::Magenta)
                 .add_modifier(ratatui::style::Modifier::BOLD),
         )
         .throbber_set(throbber_widgets_tui::ARROW)
@@ -119,6 +119,8 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
                 .map(|(idx, fixture)| build_row(idx, fixture))
                 .collect::<Vec<_>>();
 
+            let selected_row_style = Style::default().bg(Color::Green);
+
             let table = Table::new(
                 rows,
                 [
@@ -129,6 +131,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
                     Constraint::Percentage(50),
                 ],
             )
+            .row_highlight_style(selected_row_style)
             .block(block);
 
             frame.render_stateful_widget(
@@ -165,10 +168,10 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
             let unconfimed_score = scores.get(&gegen_data::types::ScoreKey::TotalUnconfirmed);
 
             let score = if let Some(score) = unconfimed_score {
-                format!("{}* - {}*", score.home, score.away)
+                format!("{} - {} (*)", score.home, score.away)
             } else {
                 let current_score = scores.get(&gegen_data::types::ScoreKey::Total).expect(
-                    "period is 1 or 2 (first of second half) but no total scores were provided",
+                    "period is 1 or 2 (first of second half) but no total score was provided",
                 );
                 format!("{} - {}", current_score.home, current_score.away)
             };
