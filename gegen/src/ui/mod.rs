@@ -16,7 +16,7 @@ use crate::{
 pub(crate) fn process_event(
     event: Event,
     app_state: &mut State,
-    render_state: &mut PageRenderStates,
+    page_states: &mut PageRenderStates,
 ) {
     if let Event::Key(key) = event {
         match key.code {
@@ -31,14 +31,14 @@ pub(crate) fn process_event(
         Page::Matches(_) => {
             if let Event::Key(key) = event {
                 match key.code {
-                    KeyCode::Esc => render_state.live_scores.table_state.select(None),
-                    KeyCode::Char('n') => app_state.next_day(render_state),
-                    KeyCode::Char('p') => app_state.previous_day(render_state),
+                    KeyCode::Esc => page_states.live_scores.table_state.select(None),
+                    KeyCode::Char('n') => app_state.next_day(page_states),
+                    KeyCode::Char('p') => app_state.previous_day(page_states),
                     KeyCode::Char('t') => app_state.reset_to_today(),
-                    KeyCode::Char('g') => render_state.live_scores.reset_scroll_state(),
+                    KeyCode::Char('g') => page_states.live_scores.reset_scroll_state(),
                     KeyCode::Enter => {
-                        let selected_tab = app_state.selected_tab(render_state);
-                        let Some(selected_row) = app_state.selected_row(render_state) else {
+                        let selected_tab = app_state.selected_tab(page_states);
+                        let Some(selected_row) = app_state.selected_row(page_states) else {
                             return;
                         };
 
@@ -67,10 +67,10 @@ pub(crate) fn process_event(
                         };
                     }
                     KeyCode::Char('k') | KeyCode::Up => {
-                        app_state.previous_row(render_state);
+                        app_state.previous_row(page_states);
                     }
                     KeyCode::Char('j') | KeyCode::Down => {
-                        app_state.next_row(render_state);
+                        app_state.next_row(page_states);
                     }
                     KeyCode::Tab => {
                         let Some(grouped_data) = app_state.get_grouped_data() else {
@@ -79,18 +79,18 @@ pub(crate) fn process_event(
                         // subtract one here because tabs are zero indexed
                         let max_no_tabs = grouped_data.len() - 1;
 
-                        render_state.live_scores.selected_tab = render_state
+                        page_states.live_scores.selected_tab = page_states
                             .live_scores
                             .selected_tab
                             .saturating_add(1)
                             .min(max_no_tabs);
-                        render_state.live_scores.table_state = Default::default();
+                        page_states.live_scores.table_state = Default::default();
                     }
                     KeyCode::BackTab => {
-                        render_state.live_scores.selected_tab =
-                            render_state.live_scores.selected_tab.saturating_sub(1);
+                        page_states.live_scores.selected_tab =
+                            page_states.live_scores.selected_tab.saturating_sub(1);
 
-                        render_state.live_scores.table_state = Default::default();
+                        page_states.live_scores.table_state = Default::default();
                     }
                     _ => (),
                 }
@@ -155,21 +155,23 @@ fn draw_key_bind_pop_up(frame: &mut Frame, app_state: &State) {
 
     let paragraph = match app_state.current_page {
         Page::Matches(_) => Paragraph::new(vec![
-            Line::raw("q - quit".to_string()),
-            Line::raw("tab - next competition".to_string()),
-            Line::raw("shift + tab - previous competition".to_string()),
-            Line::raw("n - next day".to_string()),
-            Line::raw("p - previous day".to_string()),
-            Line::raw("t - today".to_string()),
-            Line::raw("j / down - down".to_string()),
-            Line::raw("k / up - up".to_string()),
-            Line::raw("enter - up".to_string()),
+            Line::raw("q - quit"),
+            Line::raw("⇥ - next competition"),
+            Line::raw("shift + ⇥ - previous competition"),
+            Line::raw("n - next day"),
+            Line::raw("p - previous day"),
+            Line::raw("t - today"),
+            Line::raw("j / ↑ - down"),
+            Line::raw("k / ↓ - up"),
+            Line::raw("⏎ - up"),
         ]),
-        Page::MatchOverview { .. } => Paragraph::new(vec![]),
+        Page::MatchOverview { .. } => {
+            Paragraph::new(vec![Line::raw("q - quit"), Line::raw("⌫ - back")])
+        }
     };
 
     let area = popup_area(frame.area(), 60, 50);
-    frame.render_widget(Clear, area); //this clears out the background
+    frame.render_widget(Clear, area);
     frame.render_widget(paragraph.block(block), area);
 }
 

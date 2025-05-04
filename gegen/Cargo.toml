@@ -9,6 +9,7 @@ color-eyre = { workspace = true }
 crossbeam = { workspace = true }
 crossterm = { workspace = true }
 dashmap = { workspace = true }
+dirs = { workspace = true }
 gegen-data = { path = "../gegen-data" }
 itertools = { workspace = true }
 ratatui = { workspace = true }
