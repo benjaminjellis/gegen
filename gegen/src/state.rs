@@ -14,8 +14,11 @@ pub(crate) type LiveData = Arc<DashMap<NaiveDate, LiveScoresResponse>>;
 
 pub(crate) enum Page {
     Matches(NaiveDate),
-    #[allow(dead_code)]
-    MatchOverview(NaiveDate, String),
+    MatchOverview {
+        date: NaiveDate,
+        match_id: String,
+        competition_name: String,
+    },
 }
 
 pub(crate) struct State {
@@ -23,7 +26,6 @@ pub(crate) struct State {
     tick_rate: Duration,
     last_tick: SystemTime,
     pub(crate) current_page: Page,
-    pub(crate) page_states: PageStates,
     pub(crate) should_quit: bool,
     sender: Sender<NaiveDate>,
     pub(crate) today: NaiveDate,
@@ -32,8 +34,15 @@ pub(crate) struct State {
 }
 
 #[derive(Default)]
-pub(crate) struct PageStates {
+pub(crate) struct PageRenderStates {
     pub(crate) live_scores: LiveScoresPageState,
+    pub(crate) match_overview: MatchOverviewRenderState,
+}
+
+#[derive(Default)]
+pub(crate) struct MatchOverviewRenderState {
+    pub(crate) throbber_state: throbber_widgets_tui::ThrobberState,
+    pub(crate) table_state: TableState,
 }
 
 #[derive(Default)]
@@ -58,7 +67,6 @@ impl State {
             last_tick: SystemTime::now(),
             current_page: Page::Matches(today),
             should_quit: false,
-            page_states: PageStates::default(),
             sender,
             today,
             show_metadata_pop_up: false,
@@ -66,20 +74,20 @@ impl State {
         }
     }
 
-    pub(crate) fn selected_row(&self) -> Option<usize> {
-        self.page_states.live_scores.table_state.selected()
+    pub(crate) fn selected_row(&self, render_state: &PageRenderStates) -> Option<usize> {
+        render_state.live_scores.table_state.selected()
     }
 
-    pub(crate) fn previous_row(&mut self) {
-        self.page_states.live_scores.table_state.select_previous();
+    pub(crate) fn previous_row(&mut self, render_state: &mut PageRenderStates) {
+        render_state.live_scores.table_state.select_previous();
     }
 
-    pub(crate) fn next_row(&mut self) {
-        self.page_states.live_scores.table_state.select_next();
+    pub(crate) fn next_row(&mut self, render_state: &mut PageRenderStates) {
+        render_state.live_scores.table_state.select_next();
     }
 
-    pub(crate) fn selected_tab(&self) -> &usize {
-        &self.page_states.live_scores.selected_tab
+    pub(crate) fn selected_tab(&self, render_state: &mut PageRenderStates) -> usize {
+        render_state.live_scores.selected_tab
     }
 
     pub(crate) fn toggle_metadata_pop_up(&mut self) {
@@ -94,24 +102,25 @@ impl State {
         self.current_page = Page::Matches(self.today);
     }
 
-    pub(crate) fn previous_day(&mut self) {
+    pub(crate) fn previous_day(&mut self, render_state: &mut PageRenderStates) {
         let Page::Matches(current_page_date) = self.current_page else {
             return;
         };
 
         let next_day = current_page_date.checked_sub_days(Days::new(1)).unwrap();
         self.current_page = Page::Matches(next_day);
-        self.page_states.live_scores.reset_scroll_state();
+        render_state.live_scores.reset_scroll_state();
     }
 
-    pub(crate) fn next_day(&mut self) {
+    pub(crate) fn next_day(&mut self, render_state: &mut PageRenderStates) {
         let Page::Matches(current_page_date) = self.current_page else {
             return;
         };
 
         let next_day = current_page_date.checked_add_days(Days::new(1)).unwrap();
         self.current_page = Page::Matches(next_day);
-        self.page_states.live_scores.reset_scroll_state();
+
+        render_state.live_scores.reset_scroll_state();
     }
 
     pub(crate) fn should_draw(&mut self) -> bool {
@@ -123,8 +132,8 @@ impl State {
         }
     }
 
-    pub(crate) fn on_tick(&mut self) {
-        self.page_states.live_scores.throbber_state.calc_next();
+    pub(crate) fn on_tick(&mut self, render_state: &mut PageRenderStates) {
+        render_state.live_scores.throbber_state.calc_next();
         self.today = get_todays_date();
     }
 
@@ -140,7 +149,7 @@ impl State {
     pub(crate) fn get_grouped_data(&self) -> Option<Vec<(String, Vec<Match>)>> {
         let date = match self.current_page {
             Page::Matches(date) => date,
-            Page::MatchOverview(date, _) => date,
+            Page::MatchOverview { date, .. } => date,
         };
         match self.data.get(&date) {
             Some(data) => {

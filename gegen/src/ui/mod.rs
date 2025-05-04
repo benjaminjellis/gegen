@@ -9,11 +9,15 @@ use ratatui::{
 
 mod pages;
 use crate::{
-    GEGEN_VERSION,
+    GEGEN_VERSION, PageRenderStates,
     state::{Page, State},
 };
 
-pub(crate) fn process_event(event: Event, app_state: &mut State) {
+pub(crate) fn process_event(
+    event: Event,
+    app_state: &mut State,
+    render_state: &mut PageRenderStates,
+) {
     if let Event::Key(key) = event {
         match key.code {
             KeyCode::Char('q') => app_state.should_quit = true,
@@ -27,13 +31,14 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
         Page::Matches(_) => {
             if let Event::Key(key) = event {
                 match key.code {
-                    KeyCode::Char('n') => app_state.next_day(),
-                    KeyCode::Char('p') => app_state.previous_day(),
+                    KeyCode::Esc => render_state.live_scores.table_state.select(None),
+                    KeyCode::Char('n') => app_state.next_day(render_state),
+                    KeyCode::Char('p') => app_state.previous_day(render_state),
                     KeyCode::Char('t') => app_state.reset_to_today(),
-                    KeyCode::Char('g') => app_state.page_states.live_scores.reset_scroll_state(),
+                    KeyCode::Char('g') => render_state.live_scores.reset_scroll_state(),
                     KeyCode::Enter => {
-                        let selected_tab = app_state.selected_tab();
-                        let Some(selected_row) = app_state.selected_row() else {
+                        let selected_tab = app_state.selected_tab(render_state);
+                        let Some(selected_row) = app_state.selected_row(render_state) else {
                             return;
                         };
 
@@ -45,7 +50,7 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                             return;
                         };
 
-                        let Some(matches_in_tab) = grouped_data.get(*selected_tab) else {
+                        let Some(matches_in_tab) = grouped_data.get(selected_tab) else {
                             return;
                         };
 
@@ -53,14 +58,19 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                             return;
                         };
 
-                        app_state.current_page =
-                            Page::MatchOverview(date, selected_match.id.clone());
+                        let competition_name = matches_in_tab.0.clone();
+
+                        app_state.current_page = Page::MatchOverview {
+                            date,
+                            match_id: selected_match.id.clone(),
+                            competition_name,
+                        };
                     }
                     KeyCode::Char('k') | KeyCode::Up => {
-                        app_state.previous_row();
+                        app_state.previous_row(render_state);
                     }
                     KeyCode::Char('j') | KeyCode::Down => {
-                        app_state.next_row();
+                        app_state.next_row(render_state);
                     }
                     KeyCode::Tab => {
                         let Some(grouped_data) = app_state.get_grouped_data() else {
@@ -69,35 +79,51 @@ pub(crate) fn process_event(event: Event, app_state: &mut State) {
                         // subtract one here because tabs are zero indexed
                         let max_no_tabs = grouped_data.len() - 1;
 
-                        app_state.page_states.live_scores.selected_tab = app_state
-                            .page_states
+                        render_state.live_scores.selected_tab = render_state
                             .live_scores
                             .selected_tab
                             .saturating_add(1)
                             .min(max_no_tabs);
-                        app_state.page_states.live_scores.table_state = Default::default();
+                        render_state.live_scores.table_state = Default::default();
                     }
                     KeyCode::BackTab => {
-                        app_state.page_states.live_scores.selected_tab = app_state
-                            .page_states
-                            .live_scores
-                            .selected_tab
-                            .saturating_sub(1);
+                        render_state.live_scores.selected_tab =
+                            render_state.live_scores.selected_tab.saturating_sub(1);
 
-                        app_state.page_states.live_scores.table_state = Default::default();
+                        render_state.live_scores.table_state = Default::default();
                     }
                     _ => (),
                 }
             }
         }
-        Page::MatchOverview(..) => todo!(),
+        Page::MatchOverview { date, .. } => {
+            if let Event::Key(key) = event {
+                if key.code == KeyCode::Backspace {
+                    app_state.current_page = Page::Matches(date);
+                }
+            }
+        }
     }
 }
 
-pub(crate) fn draw_page(frame: &mut Frame, app_state: &mut State) {
-    match app_state.current_page {
-        Page::Matches(date) => pages::live_scores::draw(frame, app_state, &date),
-        Page::MatchOverview(..) => unimplemented!(),
+pub(crate) fn draw_page(frame: &mut Frame, app_state: &State, render_state: &mut PageRenderStates) {
+    match &app_state.current_page {
+        Page::Matches(date) => {
+            let date1 = &date;
+            pages::live_scores::draw(frame, app_state, render_state, date1)
+        }
+        Page::MatchOverview {
+            date,
+            match_id,
+            competition_name,
+        } => pages::match_overview::draw(
+            frame,
+            app_state,
+            render_state,
+            date,
+            match_id,
+            competition_name,
+        ),
     }
 
     if app_state.show_metadata_pop_up {
@@ -122,7 +148,7 @@ fn draw_metadata_pop_up(frame: &mut Frame) {
     frame.render_widget(paragraph.block(block), area);
 }
 
-fn draw_key_bind_pop_up(frame: &mut Frame, app_state: &mut State) {
+fn draw_key_bind_pop_up(frame: &mut Frame, app_state: &State) {
     let block = Block::bordered()
         .title("Key binds")
         .title_style(Style::new().red());
@@ -139,7 +165,7 @@ fn draw_key_bind_pop_up(frame: &mut Frame, app_state: &mut State) {
             Line::raw("k / up - up".to_string()),
             Line::raw("enter - up".to_string()),
         ]),
-        Page::MatchOverview(..) => Paragraph::new(vec![]),
+        Page::MatchOverview { .. } => Paragraph::new(vec![]),
     };
 
     let area = popup_area(frame.area(), 60, 50);

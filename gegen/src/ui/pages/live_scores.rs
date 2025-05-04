@@ -1,4 +1,4 @@
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use gegen_data::types::{Match, Team};
 use ratatui::{
     Frame,
@@ -6,72 +6,24 @@ use ratatui::{
     style::{Color, Style, Stylize},
     symbols,
     text::{Line, Text},
-    widgets::{Block, Cell, Paragraph, Row, Table, Tabs, Widget},
+    widgets::{Block, Cell, Row, Table, Tabs, Widget},
 };
-use throbber_widgets_tui::ThrobberState;
 
-use crate::State;
+use crate::{PageRenderStates, State};
+
+use super::shared::{render_loading, render_title};
 
 fn calculate_loading_layout(area: Rect) -> [Rect; 2] {
     let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     main_layout.areas(area)
 }
 
-fn render_title(
+pub(crate) fn draw(
     frame: &mut Frame,
-    area: Rect,
+    app_state: &State,
+    render_state: &mut PageRenderStates,
     date: &NaiveDate,
-    todays_date: &NaiveDate,
-    tab_title: String,
 ) {
-    let layout = Layout::horizontal([
-        Constraint::Min(0),
-        Constraint::Percentage(50),
-        Constraint::Percentage(50),
-        Constraint::Min(1),
-    ]);
-    let [_, left_area, right_area, _] = layout.areas(area);
-    let weekday = date.weekday();
-    let title = if date == todays_date {
-        format!("Today ({weekday} - {date})")
-    } else {
-        format!("{weekday} - {date}")
-    };
-
-    frame.render_widget(
-        Paragraph::new(title)
-            .light_green()
-            .alignment(Alignment::Left)
-            .bold(),
-        left_area,
-    );
-
-    frame.render_widget(
-        Paragraph::new(tab_title)
-            .light_green()
-            .alignment(Alignment::Right)
-            .magenta()
-            .bold(),
-        right_area,
-    );
-}
-
-// TODO: make throbber render in centre of page
-fn render_loading(frame: &mut Frame, area: Rect, throbber_state: &mut ThrobberState) {
-    let full = throbber_widgets_tui::Throbber::default()
-        .label("loading...")
-        .style(ratatui::style::Style::default().fg(ratatui::style::Color::Cyan))
-        .throbber_style(
-            ratatui::style::Style::default()
-                .fg(ratatui::style::Color::Magenta)
-                .add_modifier(ratatui::style::Modifier::BOLD),
-        )
-        .throbber_set(throbber_widgets_tui::ARROW)
-        .use_type(throbber_widgets_tui::WhichUse::Spin);
-    frame.render_stateful_widget(full, area, throbber_state);
-}
-
-pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
     match app_state.get_grouped_data() {
         Some(data_grouped) => {
             let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
@@ -80,9 +32,9 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
             let horizontal = Layout::vertical([Constraint::Min(1), Constraint::Percentage(100)]);
             let [tabs_area, content_area] = horizontal.areas(inner_area);
 
-            let st = app_state.page_states.live_scores.selected_tab;
+            let selected_tab = render_state.live_scores.selected_tab;
 
-            let tab_title = match data_grouped.get(st) {
+            let tab_title = match data_grouped.get(selected_tab) {
                 Some((key, _)) => key.clone(),
                 None => "".into(),
             };
@@ -99,7 +51,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
             let highlight_style = Style::new().bg(Color::Green).fg(Color::Magenta).bold();
             Tabs::new(titles)
                 .highlight_style(highlight_style)
-                .select(Some(*app_state.selected_tab()))
+                .select(Some(selected_tab))
                 .padding("", "")
                 .render(tabs_area, frame.buffer_mut());
 
@@ -108,7 +60,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
                 // .padding(Padding::horizontal(1))
                 .border_style(Color::Green);
 
-            let Some(fixtures) = data_grouped.get(st) else {
+            let Some(fixtures) = data_grouped.get(selected_tab) else {
                 return;
             };
 
@@ -137,7 +89,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
             frame.render_stateful_widget(
                 table,
                 content_area,
-                &mut app_state.page_states.live_scores.table_state,
+                &mut render_state.live_scores.table_state,
             );
         }
         None => {
@@ -145,11 +97,7 @@ pub(crate) fn draw(frame: &mut Frame, app_state: &mut State, date: &NaiveDate) {
             let [title_area, layout] = calculate_loading_layout(frame.area());
 
             render_title(frame, title_area, date, &app_state.today, "".to_string());
-            render_loading(
-                frame,
-                layout,
-                &mut app_state.page_states.live_scores.throbber_state,
-            );
+            render_loading(frame, layout, &mut render_state.live_scores.throbber_state);
         }
     }
 }
