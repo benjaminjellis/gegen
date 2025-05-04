@@ -1,0 +1,27 @@
+name: pr
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  os_matrix: 
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-15, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          rustup default 1.86.0
+          rustup component add clippy
+          rustup component add rustfmt
+      - name: lint
+        run: cargo clippy -- -D warnings
+      - name: fmt
+        run: cargo fmt -- --check
+      - name: Test 
+        run: cargo test
+      - name: Build
+        run: cargo build
+
