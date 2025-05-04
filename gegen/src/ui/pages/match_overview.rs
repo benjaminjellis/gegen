@@ -1,10 +1,13 @@
 use chrono::NaiveDate;
-use gegen_data::types::Match;
+use gegen_data::types::{
+    Card, CardEvent, Event, GoalEvent, GoalType, Match, PenaltyEvent, ScoreKey, SubEvent, VAREvent,
+};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
-    style::{Style, Stylize},
-    widgets::Paragraph,
+    style::Stylize,
+    text::Text,
+    widgets::{Cell, Paragraph, Row, Table},
 };
 
 use crate::{PageRenderStates, State};
@@ -22,6 +25,7 @@ pub(crate) fn draw(
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
 
     let [header_area, inner_area] = vertical.areas(frame.area());
+
     render_title(
         frame,
         header_area,
@@ -58,14 +62,14 @@ pub(crate) fn draw(
                 Constraint::Percentage(8),
                 Constraint::Percentage(90),
             ]);
-            let [time_area, overview, events] = layout.areas(inner_area);
+            let [time_area, overview_area, events_area] = layout.areas(inner_area);
 
             let layout = Layout::horizontal([
                 Constraint::Percentage(50),
                 Constraint::Min(10),
                 Constraint::Percentage(50),
             ]);
-            let [home_team_area, score_area, away_team_area] = layout.areas(overview);
+            let [home_team_area, score_area, away_team_area] = layout.areas(overview_area);
             draw_overview(
                 frame,
                 match_data,
@@ -74,6 +78,7 @@ pub(crate) fn draw(
                 score_area,
                 away_team_area,
             );
+            draw_events(frame, match_data, events_area, render_state);
         }
         None => {
             render_loading(
@@ -106,6 +111,18 @@ fn draw_overview(
     match match_data.period {
         // first or second half
         1 | 2 => {
+            let scores = match_data.score.clone().unwrap_or_default();
+
+            let unconfimed_score = scores.get(&gegen_data::types::ScoreKey::TotalUnconfirmed);
+            let score = if let Some(score) = unconfimed_score {
+                format!("{} - {} (*)", score.home, score.away)
+            } else {
+                let current_score = scores.get(&gegen_data::types::ScoreKey::Total).expect(
+                    "period is 1 or 2 (first of second half) but no total score was provided",
+                );
+                format!("{} - {}", current_score.home, current_score.away)
+            };
+
             let match_time = match_data.time.unwrap_or_default();
             let match_time_string = format!("{match_time}'");
             let match_time_para = Paragraph::new(match_time_string)
@@ -113,7 +130,10 @@ fn draw_overview(
                 .red()
                 .bold()
                 .italic();
+
+            let score_para = Paragraph::new(score).red().italic().bold().centered();
             frame.render_widget(match_time_para, time_area);
+            frame.render_widget(score_para, score_area);
         }
         // penalties
         5 => {
@@ -122,27 +142,239 @@ fn draw_overview(
         }
         // half time
         10 => {
+            let scores = match_data.score.clone().unwrap_or_default();
+            let ht_score = scores.get(&ScoreKey::Ht).expect("No half time score");
+            let ht_score = format!("{} - {}", ht_score.home, ht_score.away);
+
+            let score_para = Paragraph::new(ht_score).bold().centered();
+
             let p = Paragraph::new("ht").centered().bold().red();
             frame.render_widget(p, time_area);
+            frame.render_widget(score_para, score_area);
         }
         // full time
         14 => {
+            let scores = match_data.score.clone().unwrap_or_default();
+            let ft_score = scores.get(&ScoreKey::Ft).expect("No full time score");
+            let ft_score = format!("{} - {}", ft_score.home, ft_score.away);
+
+            let score_para = Paragraph::new(ft_score).bold().centered();
             let p = Paragraph::new("ft").centered().bold();
             frame.render_widget(p, time_area);
+            frame.render_widget(score_para, score_area);
         }
         // yet to start
         16 => {
             let start_time = &match_data.date.naive_local().time().format("%H:%M");
             let p = Paragraph::new(format!("{start_time}")).centered().bold();
             frame.render_widget(p, time_area);
+            let score_para = Paragraph::new("vs").bold().centered();
+            frame.render_widget(score_para, score_area);
         }
         _ => {}
     }
 }
 
-fn draw_events(match_data: &Match) {
+fn draw_events(
+    frame: &mut Frame,
+    match_data: &Match,
+    events_area: Rect,
+    render_state: &mut PageRenderStates,
+) {
     let Some(events) = &match_data.events else {
         return;
     };
-    for event in events {}
+    let mut event_rows = Vec::with_capacity(events.len());
+    for event in events {
+        event_rows.push(render_event(event, match_data.home.id.as_ref()));
+    }
+    let table = Table::new(
+        event_rows,
+        [
+            Constraint::Percentage(50),
+            Constraint::Min(2),
+            Constraint::Min(5),
+            Constraint::Min(2),
+            Constraint::Percentage(50),
+        ],
+    );
+    frame.render_stateful_widget(
+        table,
+        events_area,
+        &mut render_state.live_scores.table_state,
+    );
+}
+
+enum EventSide {
+    Home,
+    Away,
+}
+
+fn render_event(event: &Event, home_team_id: Option<&String>) -> Row<'static> {
+    let (emoji, text, event_side) = match event {
+        Event::Sub(sub_event) => build_sub_event(sub_event, home_team_id),
+        // ("🔄", "sub".into(), EventSide::Home),
+        Event::Goal(goal_event) => build_goal_event(goal_event, home_team_id),
+        Event::Card(card_event) => build_card_event(card_event, home_team_id),
+        Event::Var(var_event) => build_var_event(var_event, home_team_id),
+        Event::Pen(penalty_event) => build_penalty_event(penalty_event, home_team_id),
+    };
+
+    let time = event.get_time_str();
+
+    let v = match event_side {
+        EventSide::Home => [
+            Cell::new(Text::from(text).right_aligned()),
+            Cell::new(emoji),
+            Cell::new(time.clone()),
+            Cell::new(""),
+            Cell::new(""),
+        ],
+        EventSide::Away => [
+            Cell::new(""),
+            Cell::new(""),
+            Cell::new(time.clone()),
+            Cell::new(emoji),
+            Cell::new(text),
+        ],
+    };
+
+    Row::new(v)
+}
+
+fn build_penalty_event(
+    penalty_event: &PenaltyEvent,
+    home_team_id: Option<&String>,
+) -> (&'static str, String, EventSide) {
+    let event_side = if Some(&penalty_event.team_id) == home_team_id {
+        EventSide::Home
+    } else {
+        EventSide::Away
+    };
+
+    let (emoji, text) = match penalty_event.outcome {
+        gegen_data::types::PenaltyOutcome::Saved => {
+            ("❌", format!("{}: Saved", penalty_event.player_name))
+        }
+        gegen_data::types::PenaltyOutcome::Scored => {
+            ("✅", format!("{}: Scored", penalty_event.player_name))
+        }
+        gegen_data::types::PenaltyOutcome::Missed => {
+            ("❌", format!("{}: Missed", penalty_event.player_name))
+        }
+    };
+
+    (emoji, text, event_side)
+}
+
+fn build_var_event(
+    var_event: &VAREvent,
+    home_team_id: Option<&String>,
+) -> (&'static str, String, EventSide) {
+    let event_side = if Some(&var_event.team_id) == home_team_id {
+        EventSide::Home
+    } else {
+        EventSide::Away
+    };
+
+    let text = format!(
+        "{} ({}) -> {}: {}",
+        var_event.var_type, var_event.player_name, var_event.decision, var_event.outcome,
+    );
+
+    ("🔎", text, event_side)
+}
+
+fn build_card_event(
+    card_event: &CardEvent,
+    home_team_id: Option<&String>,
+) -> (&'static str, String, EventSide) {
+    let event_side = if Some(&card_event.team_id) == home_team_id {
+        EventSide::Home
+    } else {
+        EventSide::Away
+    };
+    let emoji = match card_event.card_type {
+        Card::Yellow => "🟨",
+        Card::SecondYellow => "🟨🟨 (🟥)",
+        Card::Red => "🟥",
+    };
+    let player_name = &card_event.player_name.clone().unwrap_or_default();
+
+    let text = if let Some(reason) = &card_event.reason {
+        format!("{} ({})", player_name, reason)
+    } else {
+        format!("{} ", player_name)
+    };
+
+    (emoji, text, event_side)
+}
+
+fn build_sub_event(
+    sub_event: &SubEvent,
+    home_team_id: Option<&String>,
+) -> (&'static str, String, EventSide) {
+    let event_side = if Some(&sub_event.team_id) == home_team_id {
+        EventSide::Home
+    } else {
+        EventSide::Away
+    };
+
+    let text = format!(
+        "On: {}, Off: {}",
+        sub_event.player_name, sub_event.player2_name
+    );
+
+    ("🔄", text, event_side)
+}
+
+fn build_goal_event(
+    goal_event: &GoalEvent,
+    home_team_id: Option<&String>,
+) -> (&'static str, String, EventSide) {
+    let (text, event_side) = match goal_event.goal_type {
+        GoalType::Goal => {
+            let event_side = if Some(&goal_event.team_id) == home_team_id {
+                EventSide::Home
+            } else {
+                EventSide::Away
+            };
+
+            (format_goal_text(goal_event), event_side)
+        }
+        GoalType::Penalty => {
+            let event_side = if Some(&goal_event.team_id) == home_team_id {
+                EventSide::Home
+            } else {
+                EventSide::Away
+            };
+            (format_goal_text(goal_event), event_side)
+        }
+        GoalType::OwnGoal => {
+            let event_side = if Some(&goal_event.team_id) == home_team_id {
+                EventSide::Away
+            } else {
+                EventSide::Home
+            };
+
+            (format_goal_text(goal_event), event_side)
+        }
+    };
+    ("⚽", text, event_side)
+}
+
+fn format_goal_text(goal_event: &GoalEvent) -> String {
+    let prefix = match goal_event.goal_type {
+        GoalType::Goal => "Goal",
+        GoalType::Penalty => "Goal (p)",
+        GoalType::OwnGoal => "Goal (og)",
+    };
+    if let Some(player_2_name) = &goal_event.player_2_name {
+        format!(
+            "{prefix}: {}, Assist: {}",
+            goal_event.player_name, player_2_name
+        )
+    } else {
+        format!("{prefix}: {}", goal_event.player_name)
+    }
 }

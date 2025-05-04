@@ -29,7 +29,7 @@ Shift+Tab
 
 Sleep 2s
 
-Down
+Shift+Tab
 
 Sleep 2s
 
@@ -37,7 +37,15 @@ Down
 
 Sleep 2s
 
-Up
+Down
+
+Sleep 2s
+
+Enter
+
+Sleep 2s
+
+Backspace
 
 Sleep 2s
 

@@ -42,7 +42,6 @@ pub(crate) struct PageRenderStates {
 #[derive(Default)]
 pub(crate) struct MatchOverviewRenderState {
     pub(crate) throbber_state: throbber_widgets_tui::ThrobberState,
-    pub(crate) table_state: TableState,
 }
 
 #[derive(Default)]

@@ -48,6 +48,28 @@ pub enum Event {
     Pen(PenaltyEvent),
 }
 
+impl Event {
+    pub fn get_team_id(&self) -> &String {
+        match self {
+            Event::Sub(sub_event) => &sub_event.team_id,
+            Event::Goal(goal_event) => &goal_event.team_id,
+            Event::Card(card_event) => &card_event.team_id,
+            Event::Var(varevent) => &varevent.team_id,
+            Event::Pen(penalty_event) => &penalty_event.team_id,
+        }
+    }
+
+    pub fn get_time_str(&self) -> &String {
+        match self {
+            Event::Sub(sub_event) => &sub_event.time_str,
+            Event::Goal(goal_event) => &goal_event.time_str,
+            Event::Card(card_event) => &card_event.time_str,
+            Event::Var(varevent) => &varevent.time_str,
+            Event::Pen(penalty_event) => &penalty_event.time_str,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase", tag = "entity_type")]
 pub struct PenaltyEvent {
@@ -90,6 +112,8 @@ pub struct CardEvent {
     pub period_id: u8,
     pub min: u16,
     pub time_str: String,
+    pub player_name: Option<String>,
+    pub reason: Option<String>,
     pub team_id: String,
     #[serde(rename = "type")]
     pub card_type: Card,
@@ -114,6 +138,7 @@ pub struct GoalEvent {
     pub team_id: String,
     pub player_id: String,
     pub player_name: String,
+    pub player_2_name: Option<String>,
     #[serde(rename = "type")]
     pub goal_type: GoalType,
     pub score: Option<[u8; 2]>,
