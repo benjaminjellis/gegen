@@ -12,7 +12,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - run: rustup default 1.86.0
+      - run: |
+          rustup default 1.86.0
+          rustup component add clippy
       - name: lint
         run: cargo clippy -- -D warnings
       - name: fmt
