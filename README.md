@@ -15,6 +15,13 @@ cargo run --release
 
 I plan to release via crates.io when the project is more stable as well as providing binarys via github releases.
 
+## Logs
+
+`gegen` write logs to disk for help with debugging. These logs are the only things that `gegen` writes to disk and they can be found in the following locations:
+
+- Mac: `$HOME/Library/Application Support/gegen/logs`
+- Linux: `$XDG_DATA_HOME/gegen/logs` or `$HOME/.local/share/gegen/logs`
+- Windows: `{FOLDERID_LocalAppData}\gegen\logs`
 
 ### Generating demo gifs
 
