@@ -15,6 +15,7 @@ jobs:
       - run: |
           rustup default 1.86.0
           rustup component add clippy
+          rustup component add rustfmt
       - name: lint
         run: cargo clippy -- -D warnings
       - name: fmt
