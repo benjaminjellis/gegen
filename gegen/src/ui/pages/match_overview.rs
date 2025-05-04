@@ -5,9 +5,10 @@ use gegen_data::types::{
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
-    style::Stylize,
+    style::{Color, Stylize},
+    symbols,
     text::Text,
-    widgets::{Cell, Paragraph, Row, Table},
+    widgets::{Block, Cell, Paragraph, Row, Table},
 };
 
 use crate::{PageRenderStates, State};
@@ -25,6 +26,28 @@ pub(crate) fn draw(
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
 
     let [header_area, inner_area] = vertical.areas(frame.area());
+
+    let block = Block::bordered()
+        .border_set(symbols::border::DOUBLE)
+        .border_style(Color::Green);
+
+    frame.render_widget(block, inner_area);
+
+    let layout = Layout::vertical([
+        Constraint::Min(1),
+        Constraint::Percentage(100),
+        Constraint::Min(1),
+    ]);
+
+    let [_, inner_area, _] = layout.areas(inner_area);
+
+    let layout = Layout::horizontal([
+        Constraint::Min(1),
+        Constraint::Percentage(100),
+        Constraint::Min(1),
+    ]);
+
+    let [_, inner_area, _] = layout.areas(inner_area);
 
     render_title(
         frame,
@@ -184,10 +207,12 @@ fn draw_events(
     let Some(events) = &match_data.events else {
         return;
     };
-    let mut event_rows = Vec::with_capacity(events.len());
-    for event in events {
-        event_rows.push(render_event(event, match_data.home.id.as_ref()));
-    }
+
+    let event_rows = events
+        .iter()
+        .map(|event| render_event(event, match_data.home.id.as_ref()))
+        .collect::<Vec<_>>();
+
     let table = Table::new(
         event_rows,
         [
@@ -220,22 +245,23 @@ fn render_event(event: &Event, home_team_id: Option<&String>) -> Row<'static> {
         Event::Pen(penalty_event) => build_penalty_event(penalty_event, home_team_id),
     };
 
-    let time = event.get_time_str();
+    let time = Cell::new(Text::from(event.get_time_str().clone()));
+    let emoji = Cell::new(emoji);
 
     let v = match event_side {
         EventSide::Home => [
             Cell::new(Text::from(text).right_aligned()),
-            Cell::new(emoji),
-            Cell::new(time.clone()),
+            emoji,
+            time,
             Cell::new(""),
             Cell::new(""),
         ],
         EventSide::Away => [
             Cell::new(""),
             Cell::new(""),
-            Cell::new(time.clone()),
-            Cell::new(emoji),
-            Cell::new(text),
+            time,
+            emoji,
+            Cell::new(Text::from(text)),
         ],
     };
 
@@ -279,7 +305,10 @@ fn build_var_event(
 
     let text = format!(
         "{} ({}) -> {}: {}",
-        var_event.var_type, var_event.player_name, var_event.decision, var_event.outcome,
+        var_event.var_type,
+        var_event.player_name,
+        var_event.decision,
+        var_event.outcome.clone().unwrap_or_default(),
     );
 
     ("🔎", text, event_side)

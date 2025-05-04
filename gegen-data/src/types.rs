@@ -102,7 +102,7 @@ pub struct VAREvent {
     pub player_name: String,
     #[serde(rename = "type")]
     pub var_type: String,
-    pub outcome: String,
+    pub outcome: Option<String>,
     pub decision: String,
 }
 

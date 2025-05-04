@@ -56,8 +56,7 @@ pub(crate) fn draw(
                 .render(tabs_area, frame.buffer_mut());
 
             let block = Block::bordered()
-                .border_set(symbols::border::PROPORTIONAL_TALL)
-                // .padding(Padding::horizontal(1))
+                .border_set(symbols::border::DOUBLE)
                 .border_style(Color::Green);
 
             let Some(fixtures) = data_grouped.get(selected_tab) else {
