@@ -250,19 +250,13 @@ fn render_event(event: &Event, home_team_id: Option<&String>) -> Row<'static> {
 
     let v = match event_side {
         EventSide::Home => [
-            Cell::new(Text::from(text).right_aligned()),
+            Cell::new(text.right_aligned()),
             emoji,
             time,
             Cell::new(""),
             Cell::new(""),
         ],
-        EventSide::Away => [
-            Cell::new(""),
-            Cell::new(""),
-            time,
-            emoji,
-            Cell::new(Text::from(text)),
-        ],
+        EventSide::Away => [Cell::new(""), Cell::new(""), time, emoji, Cell::new(text)],
     };
 
     Row::new(v)
@@ -271,7 +265,7 @@ fn render_event(event: &Event, home_team_id: Option<&String>) -> Row<'static> {
 fn build_penalty_event(
     penalty_event: &PenaltyEvent,
     home_team_id: Option<&String>,
-) -> (&'static str, String, EventSide) {
+) -> (&'static str, Text<'static>, EventSide) {
     let event_side = if Some(&penalty_event.team_id) == home_team_id {
         EventSide::Home
     } else {
@@ -290,13 +284,13 @@ fn build_penalty_event(
         }
     };
 
-    (emoji, text, event_side)
+    (emoji, Text::from(text), event_side)
 }
 
 fn build_var_event(
     var_event: &VAREvent,
     home_team_id: Option<&String>,
-) -> (&'static str, String, EventSide) {
+) -> (&'static str, Text<'static>, EventSide) {
     let event_side = if Some(&var_event.team_id) == home_team_id {
         EventSide::Home
     } else {
@@ -311,13 +305,13 @@ fn build_var_event(
         var_event.outcome.clone().unwrap_or_default(),
     );
 
-    ("🔎", text, event_side)
+    ("🔎", Text::from(text), event_side)
 }
 
 fn build_card_event(
     card_event: &CardEvent,
     home_team_id: Option<&String>,
-) -> (&'static str, String, EventSide) {
+) -> (&'static str, Text<'static>, EventSide) {
     let event_side = if Some(&card_event.team_id) == home_team_id {
         EventSide::Home
     } else {
@@ -336,13 +330,13 @@ fn build_card_event(
         format!("{} ", player_name)
     };
 
-    (emoji, text, event_side)
+    (emoji, Text::from(text), event_side)
 }
 
 fn build_sub_event(
     sub_event: &SubEvent,
     home_team_id: Option<&String>,
-) -> (&'static str, String, EventSide) {
+) -> (&'static str, Text<'static>, EventSide) {
     let event_side = if Some(&sub_event.team_id) == home_team_id {
         EventSide::Home
     } else {
@@ -354,13 +348,13 @@ fn build_sub_event(
         sub_event.player_name, sub_event.player2_name
     );
 
-    ("🔄", text, event_side)
+    ("🔄", Text::from(text), event_side)
 }
 
 fn build_goal_event(
     goal_event: &GoalEvent,
     home_team_id: Option<&String>,
-) -> (&'static str, String, EventSide) {
+) -> (&'static str, Text<'static>, EventSide) {
     let (text, event_side) = match goal_event.goal_type {
         GoalType::Goal => {
             let event_side = if Some(&goal_event.team_id) == home_team_id {
@@ -389,7 +383,7 @@ fn build_goal_event(
             (format_goal_text(goal_event), event_side)
         }
     };
-    ("⚽", text, event_side)
+    ("⚽", Text::from(text).yellow().italic(), event_side)
 }
 
 fn format_goal_text(goal_event: &GoalEvent) -> String {
