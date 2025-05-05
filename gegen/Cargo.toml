@@ -2,6 +2,12 @@
 name = "gegen"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+description = "football scores and fixtures from acrosss the world, in the terminal "
+readme = "../README.md"
+repository.workspace = true
+license.workspace = true
+
 
 [dependencies]
 chrono = { workspace = true }
@@ -10,7 +16,7 @@ crossbeam = { workspace = true }
 crossterm = { workspace = true }
 dashmap = { workspace = true }
 dirs = { workspace = true }
-gegen-data = { path = "../gegen-data" }
+gegen-data = { path = "../gegen-data", version = "0.1.0" }
 itertools = { workspace = true }
 ratatui = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }

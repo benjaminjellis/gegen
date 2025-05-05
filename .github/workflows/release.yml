@@ -1,0 +1,76 @@
+name: release
+
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: set up git
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: get workspace version 
+        run: |
+          version=$(grep '^version =' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$version" >> $GITHUB_ENV
+
+      - name: create tag
+        run: |
+          git tag ${{ env.version }}
+          git push origin ${{ env.version }}
+
+      - name: create github release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with: 
+          tag_name: ${{ env.version }}
+          release_name: ${{ env.version }}
+          body: |
+            auto generated release
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN}}
+
+  publish_to_crates_io:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          rustup default 1.86.0
+      - name: Publish gegen-data to crates.io
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} -p gegen-data
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }} #redundant, but explicit
+      - name: Publish gegen-data to crates.io
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} -p gegen
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }} #redundant, but explicit
+
+
+  build_binaries:
+    needs: create-release
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-15, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          rustup default 1.86.0
+          rustup component add clippy
+          rustup component add rustfmt
+      - name: build release binary
+        run: |
+          cargo build --release
+
