@@ -10,7 +10,7 @@ crossbeam = { workspace = true }
 crossterm = { workspace = true }
 dashmap = { workspace = true }
 dirs = { workspace = true }
-gegen-data = { path = "../gegen-data" }
+gegen-data = { path = "../gegen-data", version = "*" }
 itertools = { workspace = true }
 ratatui = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
