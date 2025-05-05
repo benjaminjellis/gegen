@@ -9,7 +9,7 @@ use dashmap::DashMap;
 use ratatui::DefaultTerminal;
 use state::{PageRenderStates, State};
 use std::{sync::Arc, thread::JoinHandle, time::Duration};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub(crate) const GEGEN_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -20,7 +20,10 @@ fn main() -> Result<()> {
     let file_appender = logging::create_file_appender();
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
+    let env_filter = EnvFilter::from_default_env().add_directive("gegen=debug".parse().unwrap());
+
     tracing_subscriber::registry()
+        .with(env_filter)
         .with(
             tracing_subscriber::fmt::layer()
                 .json()
@@ -60,11 +63,8 @@ fn run(
         }
 
         if app_state.should_draw() {
-            tracing::info!("pre draw");
             app_state.on_tick(&mut page_states);
             terminal.draw(|frame| ui::draw_page(frame, &app_state, &mut page_states))?;
-
-            tracing::info!("post draw");
         }
     }
 

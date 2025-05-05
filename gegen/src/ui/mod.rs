@@ -1,4 +1,4 @@
-use crossterm::event::{Event, KeyCode};
+use crossterm::event::{Event, KeyCode, KeyModifiers};
 use ratatui::{
     Frame,
     layout::{Constraint, Flex, Layout, Rect},
@@ -19,6 +19,9 @@ pub(crate) fn process_event(
     page_states: &mut PageRenderStates,
 ) {
     if let Event::Key(key) = event {
+        if key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('c') {
+            app_state.should_quit = true;
+        }
         match key.code {
             KeyCode::Char('q') => app_state.should_quit = true,
             KeyCode::Char('m') => app_state.toggle_metadata_pop_up(),
