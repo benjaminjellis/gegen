@@ -7,13 +7,22 @@
 
 ## Installation
 
-Currently the only way to install is to clone this repo and run 
+### from crates.io (requires a rust toolchain)
+
+`gegen` can be installed from crates.io by running 
+
+```
+cargo install gegen
+```
+
+### from source (requires a rust toolchain)
+
+cloning this repository and running the below will create a binary called `gegen` in `target/release`
 
 ```shell
 cargo run --release
 ```
 
-I plan to release via crates.io when the project is more stable as well as providing binarys via github releases.
 
 ## Logs
 
