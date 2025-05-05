@@ -6,6 +6,8 @@ authors.workspace = true
 description = "football scores and fixtures from acrosss the world, in the terminal "
 readme = "README.md"
 repository.workspace = true
+license.workspace = true
+
 
 [dependencies]
 chrono = { workspace = true }
