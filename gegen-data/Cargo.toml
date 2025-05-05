@@ -5,6 +5,7 @@ edition.workspace = true
 authors.workspace = true
 repository.workspace = true
 license.workspace = true
+description = "data fetching for gegen"
 
 [dependencies]
 chrono = { workspace = true, features = ["serde"] }
