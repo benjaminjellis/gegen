@@ -41,6 +41,22 @@ jobs:
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN}}
 
+  publish_to_crates_io:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          rustup default 1.86.0
+      - name: Publish gegen-data to crates.io
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} -p gegen-data
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }} #redundant, but explicit
+      - name: Publish gegen-data to crates.io
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} -p gegen
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }} #redundant, but explicit
+
 
   build_binaries:
     needs: create-release
