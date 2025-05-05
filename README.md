@@ -1,4 +1,4 @@
-# gegen [![release](https://github.com/benjaminjellis/gegen/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/benjaminjellis/gegen/actions/workflows/release.yml)
+# gegen ![Crates.io Version](https://img.shields.io/crates/v/gegen) [![release](https://github.com/benjaminjellis/gegen/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/benjaminjellis/gegen/actions/workflows/release.yml)
 
 `gegen` is a TUI for finding livescores and fixtures from football competitions around the world. Named after gegenpressing (because it was the first football term that came to mind when I needed a name), `gegen` is cross platform and should work in most terminals.
 
