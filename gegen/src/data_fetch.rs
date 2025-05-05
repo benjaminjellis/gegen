@@ -39,7 +39,6 @@ fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>
         match last_fetched_live_date.elapsed() {
             Ok(elapsed_since_last_fetch) => {
                 if elapsed_since_last_fetch > FETCH_DELAY {
-                    tracing::info!("FETCH");
                     fetch_and_insert_data(
                         &client,
                         &data,
@@ -58,7 +57,7 @@ fn fetch_data(data: LiveData, current_date: NaiveDate, recv: Receiver<NaiveDate>
         }
 
         if failure_count >= 3 {
-            tracing::error!("encountered three consecutive failutres to fetch data, aborting");
+            tracing::error!("encountered three consecutive failures to fetch data, aborting");
             break;
         }
 
