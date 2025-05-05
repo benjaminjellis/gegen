@@ -1,6 +1,5 @@
 name: release
 
-
 on:
   push:
     branches:
@@ -42,7 +41,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN}}
 
   publish_to_crates_io:
-    needs: create-release
+    needs: create_release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +58,7 @@ jobs:
 
 
   build_binaries:
-    needs: create-release
+    needs: create_release
     strategy:
       matrix:
         os: [ubuntu-latest, macos-15, windows-latest]
