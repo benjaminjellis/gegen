@@ -162,7 +162,7 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
             let scores = fixture.score.clone().unwrap_or_default();
 
             let current_score = scores
-                .get(&gegen_data::types::ScoreKey::Ft)
+                .get(&gegen_data::types::ScoreKey::Total)
                 .expect("period was 14 (full time) but no full time score was provided");
 
             (

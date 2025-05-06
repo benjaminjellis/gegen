@@ -178,7 +178,7 @@ fn draw_overview(
         // full time
         14 => {
             let scores = match_data.score.clone().unwrap_or_default();
-            let ft_score = scores.get(&ScoreKey::Ft).expect("No full time score");
+            let ft_score = scores.get(&ScoreKey::Total).expect("No full time score");
             let ft_score = format!("{} - {}", ft_score.home, ft_score.away);
 
             let score_para = Paragraph::new(ft_score).bold().centered();

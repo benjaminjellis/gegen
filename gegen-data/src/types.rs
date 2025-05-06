@@ -20,6 +20,8 @@ pub struct Match {
     pub id: String,
     /// 1: first half
     /// 2: second half
+    /// 3: first half of extra time
+    /// 4: second half of extra time
     /// 5: penalties
     /// 10: half time
     /// 14: full time
