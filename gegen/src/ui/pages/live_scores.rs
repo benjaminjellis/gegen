@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use gegen_data::types::{Match, Team};
+use gegen_data::types::{Match, ScoreKey, Team};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},
@@ -110,17 +110,36 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
     let (state_text, state_style, center_text, center_style) = match fixture.period {
         // first half and second half
         1 | 2 => {
-            let scores = fixture.score.clone().unwrap_or_default();
+            let scores = fixture.score.as_ref().expect("no scores provided");
 
-            let unconfimed_score = scores.get(&gegen_data::types::ScoreKey::TotalUnconfirmed);
+            let unconfimed_score = scores.get(&ScoreKey::TotalUnconfirmed);
+
+            let aggregate_score = scores.get(&ScoreKey::Aggregate);
 
             let score = if let Some(score) = unconfimed_score {
-                format!("{} - {} (*)", score.home, score.away)
+                if let Some(aggregate_score) = aggregate_score {
+                    format!(
+                        "{}({}) - {}({}) (*)",
+                        score.home, aggregate_score.home, score.away, aggregate_score.away
+                    )
+                } else {
+                    format!("{} - {} (*)", score.home, score.away)
+                }
             } else {
                 let current_score = scores.get(&gegen_data::types::ScoreKey::Total).expect(
                     "period is 1 or 2 (first of second half) but no total score was provided",
                 );
-                format!("{} - {}", current_score.home, current_score.away)
+                if let Some(aggregate_score) = aggregate_score {
+                    format!(
+                        "{}({}) - {}({}) (*)",
+                        current_score.home,
+                        aggregate_score.home,
+                        current_score.away,
+                        aggregate_score.away
+                    )
+                } else {
+                    format!("{} - {}", current_score.home, current_score.away)
+                }
             };
 
             let time = &fixture.time.unwrap_or(0);
