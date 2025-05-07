@@ -20,6 +20,8 @@ pub struct Match {
     pub id: String,
     /// 1: first half
     /// 2: second half
+    /// 3: first half of extra time
+    /// 4: second half of extra time
     /// 5: penalties
     /// 10: half time
     /// 14: full time
@@ -36,6 +38,12 @@ pub struct Match {
     pub events: Option<Vec<Event>>,
     #[serde(with = "ts_seconds")]
     pub updated: DateTime<Utc>,
+}
+
+impl Match {
+    pub fn try_get_score(&self, score_key: &ScoreKey) -> Option<&Score> {
+        self.score.as_ref().and_then(|scores| scores.get(score_key))
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
