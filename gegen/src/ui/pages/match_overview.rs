@@ -89,7 +89,7 @@ pub(crate) fn draw(
 
             let layout = Layout::horizontal([
                 Constraint::Percentage(50),
-                Constraint::Min(10),
+                Constraint::Min(20),
                 Constraint::Percentage(50),
             ]);
             let [home_team_area, score_area, away_team_area] = layout.areas(overview_area);
@@ -131,19 +131,36 @@ fn draw_overview(
     frame.render_widget(home_team_para, home_team_area);
     frame.render_widget(away_team_para, away_team_area);
 
+    let unconfimed_score = match_data.try_get_score(&ScoreKey::TotalUnconfirmed);
+    let aggregated_score = match_data.try_get_score(&ScoreKey::Aggregate);
+
     match match_data.period {
         // first or second half
         1 | 2 => {
-            let scores = match_data.score.clone().unwrap_or_default();
-
-            let unconfimed_score = scores.get(&gegen_data::types::ScoreKey::TotalUnconfirmed);
             let score = if let Some(score) = unconfimed_score {
-                format!("{} - {} (*)", score.home, score.away)
+                if let Some(aggregate_score) = aggregated_score {
+                    format!(
+                        "{} [{}] - {} [{}](*)",
+                        score.home, aggregate_score.home, score.away, aggregate_score.away
+                    )
+                } else {
+                    format!("{} - {} (*)", score.home, score.away)
+                }
             } else {
-                let current_score = scores.get(&gegen_data::types::ScoreKey::Total).expect(
+                let current_score = match_data.try_get_score(&ScoreKey::Total).expect(
                     "period is 1 or 2 (first of second half) but no total score was provided",
                 );
-                format!("{} - {}", current_score.home, current_score.away)
+                if let Some(aggregate_score) = aggregated_score {
+                    format!(
+                        "{} [{}] - {} [{}]",
+                        current_score.home,
+                        aggregate_score.home,
+                        current_score.away,
+                        aggregate_score.away
+                    )
+                } else {
+                    format!("{} - {}", current_score.home, current_score.away)
+                }
             };
 
             let match_time = match_data.time.unwrap_or_default();
@@ -179,7 +196,15 @@ fn draw_overview(
         14 => {
             let scores = match_data.score.clone().unwrap_or_default();
             let ft_score = scores.get(&ScoreKey::Total).expect("No full time score");
-            let ft_score = format!("{} - {}", ft_score.home, ft_score.away);
+
+            let ft_score = if let Some(aggregate_score) = aggregated_score {
+                format!(
+                    "{} [{}] - {} [{}]",
+                    ft_score.home, aggregate_score.home, ft_score.away, aggregate_score.away
+                )
+            } else {
+                format!("{} - {}", ft_score.home, ft_score.away)
+            };
 
             let score_para = Paragraph::new(ft_score).bold().centered();
             let p = Paragraph::new("ft").centered().bold();
@@ -191,7 +216,13 @@ fn draw_overview(
             let start_time = &match_data.date.with_timezone(&Local).time().format("%H:%M");
             let p = Paragraph::new(format!("{start_time}")).centered().bold();
             frame.render_widget(p, time_area);
-            let score_para = Paragraph::new("vs").bold().centered();
+
+            let vs_text = if let Some(aggregate_score) = aggregated_score {
+                format!("[{}] vs [{}]", aggregate_score.home, aggregate_score.away)
+            } else {
+                "vs".to_string()
+            };
+            let score_para = Paragraph::new(vs_text).bold().centered();
             frame.render_widget(score_para, score_area);
         }
         _ => {}

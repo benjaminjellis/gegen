@@ -78,7 +78,7 @@ pub(crate) fn draw(
                     Constraint::Min(0),
                     Constraint::Min(10),
                     Constraint::Percentage(50),
-                    Constraint::Min(10),
+                    Constraint::Min(20),
                     Constraint::Percentage(50),
                 ],
             )
@@ -107,31 +107,29 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
         _ => (Color::Gray, Color::Black),
     };
 
+    let aggregate_score = fixture.try_get_score(&ScoreKey::Aggregate);
+
     let (state_text, state_style, center_text, center_style) = match fixture.period {
         // first half and second half
         1 | 2 => {
-            let scores = fixture.score.as_ref().expect("no scores provided");
-
-            let unconfimed_score = scores.get(&ScoreKey::TotalUnconfirmed);
-
-            let aggregate_score = scores.get(&ScoreKey::Aggregate);
+            let unconfimed_score = fixture.try_get_score(&ScoreKey::TotalUnconfirmed);
 
             let score = if let Some(score) = unconfimed_score {
                 if let Some(aggregate_score) = aggregate_score {
                     format!(
-                        "{}({}) - {}({}) (*)",
+                        "{}[{}] - {}[{}] (*)",
                         score.home, aggregate_score.home, score.away, aggregate_score.away
                     )
                 } else {
                     format!("{} - {} (*)", score.home, score.away)
                 }
             } else {
-                let current_score = scores.get(&gegen_data::types::ScoreKey::Total).expect(
+                let current_score = fixture.try_get_score(&ScoreKey::Total).expect(
                     "period is 1 or 2 (first of second half) but no total score was provided",
                 );
                 if let Some(aggregate_score) = aggregate_score {
                     format!(
-                        "{}({}) - {}({}) (*)",
+                        "{} [{}] - {} [{}] (*)",
                         current_score.home,
                         aggregate_score.home,
                         current_score.away,
@@ -154,40 +152,62 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
         16 => {
             let start_time = &fixture.date.with_timezone(&Local).time().format("%H:%M");
 
+            let center_text = if let Some(aggregate) = aggregate_score {
+                format!("[{}] v [{}]", aggregate.home, aggregate.away)
+            } else {
+                "v".to_string()
+            };
             (
                 format!("{start_time}"),
                 Style::new().fg(text_color).bold(),
-                "v".to_string(),
+                center_text,
                 Style::new().fg(text_color).bold(),
             )
         }
         // half time
         10 => {
-            let scores = fixture.score.clone().unwrap_or_default();
-
-            let current_score = scores
-                .get(&gegen_data::types::ScoreKey::Ht)
-                .expect("period is 10 (half time) but no half time scores were provided");
+            let center_text = if let Some(ht_score) = fixture.try_get_score(&ScoreKey::Ht) {
+                if let Some(aggregate_score) = fixture.try_get_score(&ScoreKey::Aggregate) {
+                    format!(
+                        "{} [{}] - {} [{}]",
+                        ht_score.home, aggregate_score.home, ht_score.away, aggregate_score.away
+                    )
+                } else {
+                    format!("{} - {}", ht_score.home, ht_score.away)
+                }
+            } else {
+                "???".to_string()
+            };
 
             (
                 "ht".to_string(),
                 Style::new().red().bold(),
-                format!("{} - {}", current_score.home, current_score.away),
+                center_text,
                 Style::new().red().bold(),
             )
         }
         // full time
         14 => {
-            let scores = fixture.score.clone().unwrap_or_default();
-
-            let current_score = scores
-                .get(&gegen_data::types::ScoreKey::Total)
+            let current_score = fixture
+                .try_get_score(&ScoreKey::Total)
                 .expect("period was 14 (full time) but no full time score was provided");
+
+            let score = if let Some(aggregate_score) = aggregate_score {
+                format!(
+                    "{} [{}] - {} [{}]",
+                    current_score.home,
+                    aggregate_score.home,
+                    current_score.away,
+                    aggregate_score.away
+                )
+            } else {
+                format!("{} - {}", current_score.home, current_score.away)
+            };
 
             (
                 "ft".to_string(),
                 Style::new().fg(text_color).bold(),
-                format!("{} - {}", current_score.home, current_score.away),
+                score,
                 Style::new().fg(text_color).bold(),
             )
         }

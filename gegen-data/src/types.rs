@@ -40,6 +40,12 @@ pub struct Match {
     pub updated: DateTime<Utc>,
 }
 
+impl Match {
+    pub fn try_get_score(&self, score_key: &ScoreKey) -> Option<&Score> {
+        self.score.as_ref().and_then(|scores| scores.get(score_key))
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase", tag = "entity_type")]
 pub enum Event {
