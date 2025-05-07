@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Local, NaiveDate};
 use gegen_data::types::{
     Card, CardEvent, Event, GoalEvent, GoalType, Match, PenaltyEvent, ScoreKey, SubEvent, VAREvent,
 };
@@ -188,7 +188,7 @@ fn draw_overview(
         }
         // yet to start
         16 => {
-            let start_time = &match_data.date.naive_local().time().format("%H:%M");
+            let start_time = &match_data.date.with_timezone(&Local).time().format("%H:%M");
             let p = Paragraph::new(format!("{start_time}")).centered().bold();
             frame.render_widget(p, time_area);
             let score_para = Paragraph::new("vs").bold().centered();

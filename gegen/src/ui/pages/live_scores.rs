@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Local, NaiveDate};
 use gegen_data::types::{Match, ScoreKey, Team};
 use ratatui::{
     Frame,
@@ -152,7 +152,7 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
         }
         // yet to start
         16 => {
-            let start_time = &fixture.date.naive_local().time().format("%H:%M");
+            let start_time = &fixture.date.with_timezone(&Local).time().format("%H:%M");
 
             (
                 format!("{start_time}"),
