@@ -80,19 +80,22 @@ pub(crate) fn draw(
                 return;
             };
 
-            let layout = Layout::vertical([
-                Constraint::Percentage(2),
-                Constraint::Percentage(8),
-                Constraint::Percentage(90),
-            ]);
-            let [time_area, overview_area, events_area] = layout.areas(inner_area);
-
+            let layout = Layout::vertical([Constraint::Percentage(10), Constraint::Percentage(90)]);
+            let [header_area, events_area] = layout.areas(inner_area);
             let layout = Layout::horizontal([
                 Constraint::Percentage(50),
                 Constraint::Min(20),
                 Constraint::Percentage(50),
             ]);
-            let [home_team_area, score_area, away_team_area] = layout.areas(overview_area);
+
+            let [left_header, middle_header, right_header] = layout.areas(header_area);
+
+            let layout = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
+
+            let [time_area, score_area] = layout.areas(middle_header);
+            let [_, home_team_area] = layout.areas(left_header);
+            let [_, away_team_area] = layout.areas(right_header);
+
             draw_overview(
                 frame,
                 match_data,
@@ -269,7 +272,6 @@ enum EventSide {
 fn render_event(event: &Event, home_team_id: Option<&String>) -> Row<'static> {
     let (emoji, text, event_side) = match event {
         Event::Sub(sub_event) => build_sub_event(sub_event, home_team_id),
-        // ("🔄", "sub".into(), EventSide::Home),
         Event::Goal(goal_event) => build_goal_event(goal_event, home_team_id),
         Event::Card(card_event) => build_card_event(card_event, home_team_id),
         Event::Var(var_event) => build_var_event(var_event, home_team_id),
