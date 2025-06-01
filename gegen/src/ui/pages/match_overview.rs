@@ -278,7 +278,12 @@ fn render_event(event: &Event, home_team_id: Option<&String>) -> Row<'static> {
         Event::Pen(penalty_event) => build_penalty_event(penalty_event, home_team_id),
     };
 
-    let time = Cell::new(Text::from(event.get_time_str().clone()));
+    let time = event
+        .get_time_str()
+        .map(|a| a.to_string())
+        .unwrap_or("".to_string());
+
+    let time = Cell::new(Text::from(time));
     let emoji = Cell::new(emoji);
 
     let v = match event_side {
