@@ -70,7 +70,7 @@ pub(crate) fn draw(
                 .map(|(idx, fixture)| build_row(idx, fixture))
                 .collect::<Vec<_>>();
 
-            let selected_row_style = Style::default().bg(Color::Green);
+            let selected_row_style = Style::default().bg(Color::Green).fg(Color::LightMagenta);
 
             let table = Table::new(
                 rows,

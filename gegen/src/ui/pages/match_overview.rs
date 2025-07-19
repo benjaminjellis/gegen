@@ -363,9 +363,9 @@ fn build_card_event(
     let player_name = &card_event.player_name.clone().unwrap_or_default();
 
     let text = if let Some(reason) = &card_event.reason {
-        format!("{} ({})", player_name, reason)
+        format!("{player_name} ({reason})")
     } else {
-        format!("{} ", player_name)
+        format!("{player_name} ")
     };
 
     (emoji, Text::from(text), event_side)
