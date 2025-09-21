@@ -621,7 +621,7 @@ dependencies = [
 
 [[package]]
 name = "gegen"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "color-eyre",
@@ -641,7 +641,7 @@ dependencies = [
 
 [[package]]
 name = "gegen-data"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "const_format",

@@ -6,7 +6,7 @@ use gegen_data::{get_live_scores, get_matches};
 
 use crate::state::LiveData;
 
-const FETCH_DELAY: Duration = Duration::from_secs(4);
+const FETCH_DELAY: Duration = Duration::from_secs(6);
 const DATA_FETCH_THREAD_NAME: &str = "data fetch thread";
 const SLEEP: Duration = Duration::from_millis(100);
 

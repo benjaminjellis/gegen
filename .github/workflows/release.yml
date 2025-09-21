@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  RUST_VERSION: "1.90.0"
+
 jobs:
   create_release:
     permissions:
@@ -19,7 +22,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: get workspace version 
+      - name: get workspace version
         run: |
           version=$(grep '^version =' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
           echo "version=$version" >> $GITHUB_ENV
@@ -33,7 +36,7 @@ jobs:
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with: 
+        with:
           tag_name: ${{ env.version }}
           release_name: ${{ env.version }}
           body: |
@@ -48,12 +51,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          rustup default 1.86.0
+          rustup default ${{ vars.RUST_VERSION  }}
       - name: Publish gegen-data to crates.io
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p gegen-data
       - name: Publish gegen-data to crates.io
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p gegen
-        
 
   build_binaries:
     needs: create_release
@@ -64,10 +66,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          rustup default 1.86.0
+          rustup default ${{ vars.RUST_VERSION  }}
           rustup component add clippy
           rustup component add rustfmt
       - name: build release binary
         run: |
           cargo build --release
-
