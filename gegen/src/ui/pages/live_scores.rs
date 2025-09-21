@@ -70,7 +70,7 @@ pub(crate) fn draw(
                 .map(|(idx, fixture)| build_row(idx, fixture))
                 .collect::<Vec<_>>();
 
-            let selected_row_style = Style::default().bg(Color::Green).fg(Color::LightMagenta);
+            let selected_row_style = Style::default().bg(Color::White).fg(Color::LightMagenta);
 
             let table = Table::new(
                 rows,
@@ -101,10 +101,10 @@ pub(crate) fn draw(
     }
 }
 
-fn build_row(idx: usize, fixture: &Match) -> Row {
+fn build_row<'a>(idx: usize, fixture: &'a Match) -> Row<'a> {
     let (row_color, text_color) = match idx % 2 {
         0 => (Color::Black, Color::White),
-        _ => (Color::Gray, Color::Black),
+        _ => (Color::Green, Color::Black),
     };
 
     let aggregate_score = fixture.try_get_score(&ScoreKey::Aggregate);
@@ -240,7 +240,7 @@ fn build_row(idx: usize, fixture: &Match) -> Row {
     .style(Style::new().bg(row_color))
 }
 
-fn format_team_name(team: &Team, alligment: Alignment, text_color: Color) -> Cell {
+fn format_team_name<'a>(team: &'a Team, alligment: Alignment, text_color: Color) -> Cell<'a> {
     Cell::new(
         Text::from(team.name.clone().unwrap_or("tbc".into()))
             .alignment(alligment)

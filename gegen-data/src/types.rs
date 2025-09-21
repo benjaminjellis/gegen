@@ -224,4 +224,5 @@ pub enum Status {
     Fixture,
     Playing,
     Postponed,
+    Suspended,
 }

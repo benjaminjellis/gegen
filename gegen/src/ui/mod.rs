@@ -100,10 +100,10 @@ pub(crate) fn process_event(
             }
         }
         Page::MatchOverview { date, .. } => {
-            if let Event::Key(key) = event {
-                if key.code == KeyCode::Backspace {
-                    app_state.current_page = Page::Matches(date);
-                }
+            if let Event::Key(key) = event
+                && key.code == KeyCode::Backspace
+            {
+                app_state.current_page = Page::Matches(date);
             }
         }
     }
